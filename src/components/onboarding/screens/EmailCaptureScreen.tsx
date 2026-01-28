@@ -1,27 +1,25 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { Input } from "../../ui/input";
-import { Checkbox } from "../../ui/checkbox";
 
 interface EmailCaptureScreenProps {
   email: string;
-  emailTips: boolean;
   onEmailChange: (value: string) => void;
-  onEmailTipsChange: (value: boolean) => void;
   onContinue: () => void;
   onBack: () => void;
+  onTokenChange?: (token: string | null) => void;
 }
 
 export function EmailCaptureScreen({ 
   email, 
-  emailTips, 
   onEmailChange, 
-  onEmailTipsChange, 
-  onContinue, 
-  onBack 
+  onContinue,
+  onTokenChange,
 }: EmailCaptureScreenProps) {
+  const scriptLoadedRef = useRef(false);
+  const widgetIdRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -32,13 +30,58 @@ export function EmailCaptureScreen({
     }
   };
 
+  // Load Turnstile script once and render widget once (StrictMode safe)
+  useEffect(() => {
+    if (scriptLoadedRef.current) return;
+    scriptLoadedRef.current = true;
+
+    const renderTurnstile = () => {
+      if (!(window as any).turnstile || !containerRef.current || widgetIdRef.current) return;
+
+      widgetIdRef.current = (window as any).turnstile.render(containerRef.current, {
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+        callback: (token: string) => {
+          if (import.meta.env.DEV) console.debug("[Turnstile] token", token);
+          onTokenChange?.(token);
+        },
+        "expired-callback": () => {
+          if (import.meta.env.DEV) console.debug("[Turnstile] expired");
+          onTokenChange?.(null);
+        },
+        "error-callback": () => {
+          if (import.meta.env.DEV) console.debug("[Turnstile] error");
+          onTokenChange?.(null);
+        },
+      });
+    };
+
+    if ((window as any).turnstile) {
+      renderTurnstile();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.onload = renderTurnstile;
+    document.body.appendChild(script);
+
+    return () => {
+      if ((window as any).turnstile && widgetIdRef.current) {
+        (window as any).turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [onTokenChange]);
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <h1 className="font-['Fraunces'] font-bold text-4xl">
-        Where should we send your ICP?
+        Enter your email to access your ICPs
       </h1>
       <p className="text-foreground/70 max-w-md">
-        It's 100% free. We'll email it so you don't lose it.
+        Enter your email to generate your ICP and unlock access to it in your dashboard.
       </p>
       
       <div className="space-y-4 pt-4">
@@ -48,24 +91,22 @@ export function EmailCaptureScreen({
           onChange={(e) => onEmailChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="your@email.com"
-          className="border-[1px] border-black rounded-[10px] px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
+          className="border border-black rounded-design px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
           autoFocus
         />
-        
-        <div className="flex items-start gap-3 pt-2">
-          <Checkbox
-            id="email-tips"
-            checked={emailTips}
-            onCheckedChange={(checked) => onEmailTipsChange(checked === true)}
-            className="mt-1 border-black data-[state=checked]:bg-button-green data-[state=checked]:border-black"
-          />
-          <label
-            htmlFor="email-tips"
-            className="text-sm text-foreground/70 cursor-pointer leading-relaxed"
-          >
-            Send me tips to get the most out of my ICP
-          </label>
-        </div>
+
+        <div ref={containerRef} id="turnstile-container" className="pt-2" />
+
+        <p className="text-xs text-foreground/60 max-w-md">
+          By continuing, you agree to our{" "}
+          <Link to="/privacy" className="underline text-foreground">
+            Privacy Policy
+          </Link>{" "}
+          and{" "}
+          <Link to="/terms" className="underline text-foreground">
+            Terms &amp; Conditions
+          </Link>.
+        </p>
       </div>
     </div>
   );

@@ -1,6 +1,3 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
 import { SelectChip } from "../SelectChip";
 
 interface MarketingChannelsScreenProps {
@@ -13,6 +10,7 @@ interface MarketingChannelsScreenProps {
 const channelOptions = [
   "Instagram",
   "Facebook",
+  "Meta Ads (paid social)",
   "TikTok",
   "LinkedIn",
   "Email",
@@ -23,7 +21,7 @@ const channelOptions = [
   "None yet"
 ];
 
-export function MarketingChannelsScreen({ value, onChange, onContinue, onBack }: MarketingChannelsScreenProps) {
+export function MarketingChannelsScreen({ value, onChange }: MarketingChannelsScreenProps) {
   const toggleOption = (option: string) => {
     if (value.includes(option)) {
       onChange(value.filter(v => v !== option));

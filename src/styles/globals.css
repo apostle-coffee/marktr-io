@@ -1,9 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 /* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --font-size: 16px;
@@ -159,10 +159,15 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  
+  /* Border Radius - Design System */
+  --radius-design: 10px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Sidebar Colors */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -293,6 +298,24 @@ html {
   }
 }
 
+@keyframes loadingShimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes loadingScan {
+  0%, 100% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -307,6 +330,14 @@ html {
 
 .animate-bounce-subtle {
   animation: bounceSubtle 2s ease-in-out infinite;
+}
+
+.animate-loading-shimmer {
+  animation: loadingShimmer 1.5s linear infinite;
+}
+
+.animate-loading-scan {
+  animation: loadingScan 3s ease-in-out infinite;
 }
 
 /* Staggered animation delays */
@@ -326,3 +357,71 @@ html {
   animation-delay: 0.4s;
 }
 
+/* Design System Utilities */
+.rounded-design {
+  border-radius: 10px;
+}
+
+.icp-option-selected {
+  background-color: rgba(255, 153, 34, 0.2);
+  border-color: #FF9922;
+}
+
+/* Card interaction states */
+.icp-locked,
+.collection-locked {
+  cursor: default !important;
+  opacity: 0.65;
+  pointer-events: auto;
+}
+
+.icp-clickable,
+.collection-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.icp-clickable:hover,
+.collection-clickable:hover {
+  transform: translateY(-2px);
+}
+
+.icp-clickable:active,
+.collection-clickable:active {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: none;
+}
+
+@keyframes shake-smooth {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-3px); }
+  30%  { transform: translateX(3px); }
+  45%  { transform: translateX(-2px); }
+  60%  { transform: translateX(2px); }
+  75%  { transform: translateX(-1px); }
+  100% { transform: translateX(0.5px); }
+}
+
+.lock-shake {
+  animation: shake-smooth 0.38s cubic-bezier(.36,.07,.19,.97);
+  will-change: transform;
+}
+
+.shake-card {
+  animation: shake-smooth 0.38s cubic-bezier(.36,.07,.19,.97);
+  will-change: transform;
+}
+
+/* smoother 3-step shake — no stutter */
+@keyframes smooth-shake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-4px); }
+  40%  { transform: translateX(4px); }
+  60%  { transform: translateX(-3px); }
+  80%  { transform: translateX(3px); }
+  100% { transform: translateX(0); }
+}
+
+.shake-card {
+  animation: smooth-shake 0.35s ease-out;
+}

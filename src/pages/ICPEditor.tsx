@@ -1,105 +1,385 @@
-"use client";
-
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
-import { 
-  ArrowLeft, 
-  Save, 
-  RefreshCw, 
-  Download, 
+import { useICPs, ICP } from "../hooks/useICPs";
+import { useBrands } from "../hooks/useBrands";
+import useSubscription from "../hooks/useSubscription";
+import { exportICPAsPDF } from "../utils/exportICP";
+import { canExportICP } from "../config/accessRules";
+import { usePaywall } from "../contexts/PaywallContext";
+import { useICPStrategy } from "../hooks/useICPStrategy";
+import DashboardShell from "../layouts/DashboardShell";
+import { ICPProfileLayout } from "../components/icp/ICPProfileLayout";
+import ICPColorModal from "../components/ICPColorModal";
+import ICPAvatarModal from "../components/ICPAvatarModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import { getAvatarSrc } from "../utils/avatarLibrary";
+import { supabase } from "../config/supabase";
+import "../styles/Modal.css";
+import {
+  ArrowLeft,
+  Save,
+  Copy,
+  Download,
+  FileText,
   Lock,
   Plus,
   X,
-  Sparkles,
   Pencil,
   Check,
   Trash2,
-  Undo2
+  Undo2,
+  MoreVertical,
+  Palette,
+  Image as ImageIcon,
+  FolderPlus,
 } from "lucide-react";
-// Placeholder avatar - replace with actual image
-const avatarSarah = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face";
 
 export default function ICPEditor() {
-  const { id } = useParams();
-  const [userTier, setUserTier] = useState<"free" | "paid">("free");
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { getICP, updateICP, duplicateICP } = useICPs();
+  const { brands, isLoading: brandsLoading } = useBrands();
+  const { tier: userTier, trialActive } = useSubscription();
+  const { openPaywall } = usePaywall();
+  const {
+    strategy,
+    isLoading: strategyLoading,
+    isGenerating: strategyGenerating,
+    error: strategyError,
+    generateStrategy,
+  } = useICPStrategy(id);
+  // Treat trial users as "pro" for export gating.
+  const effectiveTier = userTier === "free" && !trialActive ? "free" : "pro";
   const [isSaving, setIsSaving] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Mock ICP data - would come from backend
-  const [icpData, setICPData] = useState({
-    persona_name: "Sarah the Startup Founder",
-    age_range: "28-38",
-    bio: "Early-stage tech founder seeking product-market fit",
-    avatar: avatarSarah,
-    circleColor: "#BBA0E5",
-    goals: [
-      "Validate product-market fit quickly",
-      "Build a scalable customer acquisition strategy",
-      "Understand target audience deeply"
-    ],
-    pain_points: [
-      "Limited budget for market research",
-      "Wasting time on wrong customer segments",
-      "Struggling to articulate value proposition clearly"
-    ],
-    buying_triggers: [
-      "Fast implementation and results",
-      "Affordable pricing for early-stage companies",
-      "Proven case studies from similar startups"
-    ],
-    behaviours: [
-      "Active on LinkedIn and Twitter/X",
-      "Consumes startup podcasts and newsletters",
-      "Attends virtual networking events weekly"
-    ],
-    messaging: [
-      "Speed and efficiency messaging",
-      "ROI-focused language",
-      "Founder-to-founder tone"
-    ],
-    content_pillars: [
-      "Product-market fit frameworks",
-      "Customer research best practices",
-      "Startup growth strategies"
-    ],
-    meta_lookalike: "Tech founders, 25-40, interested in SaaS, entrepreneurship, product management. Engaged with Y Combinator, Product Hunt, TechCrunch."
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [brandSaveStatus, setBrandSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDirty, setIsDirty] = useState(false);
+  const originalDataRef = useRef<Partial<ICP> | null>(null);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const pendingNavRef = useRef<string | null>(null);
+  const [icpData, setICPData] = useState<Partial<ICP>>({
+    name: "",
+    description: "",
+    industry: "",
+    company_size: "",
+    location: "",
+    goals: [],
+    pain_points: [],
+    budget: "",
+    decision_makers: [],
+    tech_stack: [],
+    challenges: [],
+    opportunities: [],
+  });
+  const [icpColorModal, setIcpColorModal] = useState({
+    open: false,
+    id: null as string | null,
+    currentColor: null as string | null,
   });
 
-  const handleSave = async () => {
+  const [icpAvatarModal, setIcpAvatarModal] = useState({
+    open: false,
+    id: null as string | null,
+    currentAvatarKey: null as string | null,
+    gender: null as string | null,
+    ageRange: null as string | null,
+  });
+
+  const [moveBrandOpen, setMoveBrandOpen] = useState(false);
+  const [moveBrandId, setMoveBrandId] = useState<string | null>(null);
+  const [strategyGoal, setStrategyGoal] = useState("Generate qualified leads");
+  const [strategyChannel, setStrategyChannel] = useState("");
+  const [strategyOfferType, setStrategyOfferType] = useState("");
+  const [strategyTone, setStrategyTone] = useState("");
+
+  useEffect(() => {
+    const loadICP = async () => {
+      if (!id) return;
+      // Avoid re-showing the full-page loader if we already have data (prevents flicker)
+      if (!originalDataRef.current) setIsLoading(true);
+      const icp = await getICP(id);
+      if (icp) {
+        setICPData(icp);
+        originalDataRef.current = icp;
+        setIsDirty(false);
+        setMoveBrandId((icp as any)?.brand_id ?? null);
+      } else {
+        navigate("/dashboard");
+      }
+      setIsLoading(false);
+    };
+    loadICP();
+  }, [id, getICP, navigate]);
+
+  // Warn on browser/tab close if there are unsaved changes
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Track dirty state whenever icpData changes
+  useEffect(() => {
+    if (!originalDataRef.current) return;
+    const serialize = (data: Partial<ICP>) => JSON.stringify({
+      name: data.name || "",
+      description: data.description || "",
+      industry: data.industry || "",
+      company_size: data.company_size || "",
+      location: data.location || "",
+      goals: data.goals || [],
+      pain_points: data.pain_points || [],
+      budget: data.budget || "",
+      decision_makers: data.decision_makers || [],
+      tech_stack: data.tech_stack || [],
+      challenges: data.challenges || [],
+      opportunities: data.opportunities || [],
+    });
+    const current = serialize(icpData);
+    const original = serialize(originalDataRef.current);
+    setIsDirty(current !== original);
+  }, [icpData]);
+
+  // Intercept in-app navigation clicks and prompt to save/discard
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const onClickCapture = (e: MouseEvent) => {
+      if (!isDirty) return;
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest("[data-allow-navigation='true']")) return;
+
+      const anchor = target.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+      if (href.startsWith("#")) return;
+      if (anchor.target === "_blank") return;
+
+      const url = new URL(href, window.location.origin);
+      if (url.origin !== window.location.origin) return;
+
+      const nextPath = `${url.pathname}${url.search}${url.hash}`;
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (nextPath === currentPath) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      pendingNavRef.current = nextPath;
+      setLeaveDialogOpen(true);
+    };
+
+    document.addEventListener("click", onClickCapture, true);
+    return () => document.removeEventListener("click", onClickCapture, true);
+  }, [isDirty]);
+
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    if (!id) return false;
     setIsSaving(true);
-    // Simulate save
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setSaveStatus("saving");
+    
+    const updates = {
+      name: icpData.name,
+      description: icpData.description,
+      industry: icpData.industry,
+      company_size: icpData.company_size,
+      location: icpData.location,
+      goals: icpData.goals,
+      pain_points: icpData.pain_points,
+      budget: icpData.budget,
+      decision_makers: icpData.decision_makers,
+      tech_stack: icpData.tech_stack,
+      challenges: icpData.challenges,
+      opportunities: icpData.opportunities,
+    };
+
+    const success = await updateICP(id, updates);
+    if (!success) {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      alert("Failed to save changes. Please try again.");
+      setIsSaving(false);
+      return false;
+    }
+    originalDataRef.current = { ...icpData, ...updates };
+    setIsDirty(false);
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus("idle"), 3000);
     setIsSaving(false);
+    return true;
+  }, [id, icpData, updateICP]);
+
+  const performPendingNavigation = (path: string | null) => {
+    if (!path) return;
+    pendingNavRef.current = null;
+    navigate(path);
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Simulate AI regeneration
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsRefreshing(false);
+  const handleLeaveWithoutSaving = () => {
+    setLeaveDialogOpen(false);
+    performPendingNavigation(pendingNavRef.current);
   };
 
-  const handleExport = (format: "pdf" | "json") => {
-    if (userTier === "free") {
+  const handleCloseLeaveDialog = () => {
+    pendingNavRef.current = null;
+    setLeaveDialogOpen(false);
+  };
+
+  const handleSaveAndLeave = async () => {
+    const ok = await handleSave();
+    if (!ok) return;
+    setLeaveDialogOpen(false);
+    performPendingNavigation(pendingNavRef.current);
+  };
+
+  // (Navigation guarding is handled via click-capture + AlertDialog; no useBlocker here.)
+
+  const handleExport = () => {
+    if (!id) return;
+    if (effectiveTier === "free") {
       alert("Upgrade to unlock exports");
       return;
     }
-    console.log(`Export as ${format}`);
+    const exportIndex = (icpData as any)?._index ?? 0;
+    if (!canExportICP(exportIndex, effectiveTier as any)) {
+      alert("Upgrade to unlock this export");
+      return;
+    }
+    const payload = { ...icpData, id };
+    exportICPAsPDF(payload);
+  };
+
+  const icpHeaderColor = (icpData as any)?.color || "#EDEDED";
+  const icpAvatarKey = (icpData as any)?.avatar_key || null;
+  const icpAvatarSrc = getAvatarSrc(icpAvatarKey);
+
+  const currentBrandId = ((icpData as any)?.brand_id ?? null) as string | null;
+
+  const handleBrandChange = async (nextBrandIdRaw: string) => {
+    if (!id) return;
+
+    // HTML select gives "" for empty option
+    const nextBrandId = nextBrandIdRaw ? nextBrandIdRaw : null;
+
+    setBrandSaveStatus("saving");
+    const ok = await updateICP(id, { brand_id: nextBrandId } as any);
+    if (!ok) {
+      setBrandSaveStatus("error");
+      setTimeout(() => setBrandSaveStatus("idle"), 2500);
+      return;
+    }
+
+    // Update local UI and keep page "not dirty" since it's already persisted
+    setICPData((prev) => ({ ...(prev as any), brand_id: nextBrandId } as any));
+    if (originalDataRef.current) {
+      originalDataRef.current = { ...(originalDataRef.current as any), brand_id: nextBrandId } as any;
+    }
+    setIsDirty(false);
+
+    setBrandSaveStatus("saved");
+    setTimeout(() => setBrandSaveStatus("idle"), 1500);
+    try {
+      window.dispatchEvent(new Event("icps:changed"));
+    } catch {}
+  };
+
+  const handleDuplicate = async () => {
+    if (!id) return;
+    try {
+      const created = await duplicateICP(id);
+      if (created?.id) {
+        try {
+          window.dispatchEvent(new Event("icps:changed"));
+        } catch {}
+        navigate(`/icp/${created.id}`);
+      }
+    } catch (err) {
+      console.error("ICPEditor duplicate error:", err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    const ok = window.confirm("Are you sure you want to delete this ICP? This action cannot be undone.");
+    if (!ok) return;
+    try {
+      const { error } = await supabase.from("icps").delete().eq("id", id);
+      if (error) throw error;
+      try {
+        window.dispatchEvent(new Event("icps:changed"));
+      } catch {}
+      navigate("/icps");
+    } catch (err) {
+      console.error("ICPEditor delete error:", err);
+    }
+  };
+
+  const handleOpenColorModal = () => {
+    if (!id) return;
+    setIcpColorModal({
+      open: true,
+      id,
+      currentColor: (icpData as any)?.color ?? null,
+    });
+  };
+
+  const handleOpenAvatarModal = () => {
+    if (!id) return;
+    setIcpAvatarModal({
+      open: true,
+      id,
+      currentAvatarKey: (icpData as any)?.avatar_key ?? null,
+      gender: (icpData as any)?.gender ?? (icpData as any)?.avatar_gender ?? null,
+      ageRange: (icpData as any)?.age_range ?? (icpData as any)?.avatar_age_range ?? null,
+    });
+  };
+
+  const handleSaveMoveBrand = async () => {
+    if (!id) return;
+    const ok = await updateICP(id, { brand_id: moveBrandId ?? null } as any);
+    if (!ok) return;
+
+    setICPData((prev) => ({ ...(prev as any), brand_id: moveBrandId } as any));
+    if (originalDataRef.current) {
+      originalDataRef.current = { ...(originalDataRef.current as any), brand_id: moveBrandId } as any;
+    }
+    setIsDirty(false);
+    setMoveBrandOpen(false);
+    try {
+      window.dispatchEvent(new Event("icps:changed"));
+    } catch {}
   };
 
   const EditableListSection = ({ 
     title, 
     items, 
-    field, 
-    isLocked = false 
+    isLocked = false,
+    onChange,
   }: { 
     title: string; 
     items: string[]; 
-    field: string;
     isLocked?: boolean;
+    onChange?: (items: string[]) => void;
   }) => {
     const [localItems, setLocalItems] = useState(items);
     const [newItem, setNewItem] = useState("");
@@ -109,12 +389,20 @@ export default function ICPEditor() {
     const [historyIndex, setHistoryIndex] = useState(0);
     const [showUndo, setShowUndo] = useState(false);
 
+    // Keep local state in sync when parent data changes (e.g., navigating between ICPs)
+    useEffect(() => {
+      setLocalItems(items);
+      setHistory([items]);
+      setHistoryIndex(0);
+    }, [items]);
+
     const saveToHistory = (newItems: string[]) => {
       const newHistory = history.slice(0, historyIndex + 1);
       newHistory.push(newItems);
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
       setLocalItems(newItems);
+      onChange?.(newItems);
       
       // Show undo button briefly
       setShowUndo(true);
@@ -171,7 +459,7 @@ export default function ICPEditor() {
     return (
       <div className={`relative ${isLocked ? 'opacity-60' : ''}`}>
         {isLocked && (
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-[10px] z-10 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-design z-10 flex items-center justify-center">
             <Lock className="w-6 h-6 text-foreground/60" />
           </div>
         )}
@@ -191,7 +479,7 @@ export default function ICPEditor() {
                       if (e.key === 'Enter') saveEdit(index);
                       if (e.key === 'Escape') cancelEdit();
                     }}
-                    className="flex-1 border-black rounded-[10px] font-['Inter'] text-sm"
+                    className="flex-1 border-black rounded-design font-['Inter'] text-sm"
                     autoFocus
                   />
                   <button
@@ -250,13 +538,13 @@ export default function ICPEditor() {
               onChange={(e) => setNewItem(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addItem()}
               placeholder={`Add ${title.toLowerCase()}...`}
-              className="flex-1 border-black rounded-[10px] font-['Inter'] text-sm"
+              className="flex-1 border-black rounded-design font-['Inter'] text-sm"
             />
             <Button
               onClick={addItem}
               size="sm"
               variant="outline"
-              className="border-black rounded-[10px] px-3"
+              className="border-black rounded-design px-3"
             >
               <Plus className="w-4 h-4" />
             </Button>
@@ -269,7 +557,7 @@ export default function ICPEditor() {
               onClick={handleUndo}
               size="sm"
               variant="outline"
-              className="border-black rounded-[10px] px-3"
+              className="border-black rounded-design px-3"
             >
               <Undo2 className="w-4 h-4" />
               Undo
@@ -280,218 +568,765 @@ export default function ICPEditor() {
     );
   };
 
+  // Show loading state (after hooks so hook order is consistent)
+  if (isLoading) {
+    return (
+      <DashboardShell contentClassName="flex-1 px-6 py-8 lg:px-12">
+        {/* Reserve enough vertical space so the footer never pops into view */}
+        <div className="min-h-[calc(100vh-220px)] flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-button-green border-t-transparent rounded-full animate-spin" />
+            <p className="text-foreground/70">Loading ICP...</p>
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-warm-grey bg-background sticky top-0 z-40">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link 
-              to="/dashboard" 
-              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+    <DashboardShell contentClassName="flex-1 px-6 py-8 lg:px-12">
+      {leaveDialogOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            pendingNavRef.current = null;
+            setLeaveDialogOpen(false);
+          }}
+        >
+          <div
+            className="modal-content modal-content-wide"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close X */}
+            <button
+              className="modal-close"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCloseLeaveDialog();
+              }}
+              aria-label="Close"
             >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-['Inter']">Back to Dashboard</span>
-            </Link>
+              ×
+            </button>
 
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={handleRefresh}
-                variant="outline"
-                disabled={isRefreshing}
-                className="border-black rounded-[10px] px-4 py-2 flex items-center gap-2"
+            <h2>Save changes before leaving?</h2>
+
+            <p>
+              You have unsaved edits.
+              <br />
+              Leave without saving or save and continue.
+            </p>
+
+            <div className="modal-buttons modal-buttons-2">
+              <button
+                className="modal-cancel"
+                onClick={handleLeaveWithoutSaving}
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Refresh with AI</span>
-              </Button>
+                Leave without saving
+              </button>
 
-              <Button
-                onClick={() => handleExport('pdf')}
-                variant="outline"
-                className="border-black rounded-[10px] px-4 py-2 flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
-
-              <Button
-                onClick={handleSave}
+              <button
+                className="modal-save"
+                onClick={handleSaveAndLeave}
                 disabled={isSaving}
-                className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-6 py-2 flex items-center gap-2"
               >
-                <Save className="w-4 h-4" />
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
+                {isSaving ? "Saving…" : "Save & leave"}
+              </button>
             </div>
           </div>
         </div>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-12 max-w-4xl">
-        {/* Header Section */}
-        <div className="bg-background border border-black rounded-[10px] p-8 shadow-md mb-8 animate-fade-in-up">
-          <div className="flex items-start gap-6 mb-6">
-            {/* Avatar & Color Picker */}
-            <div className="flex-shrink-0">
-              <div className="relative mb-3">
-                <div 
-                  className="w-24 h-24 rounded-full border-2 border-black flex items-center justify-center overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                  style={{ backgroundColor: icpData.circleColor }}
-                >
-                  <img 
-                    src={icpData.avatar} 
-                    alt={icpData.persona_name}
-                    className="w-full h-full object-cover"
+      <ICPProfileLayout
+        headerLeft={
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                <span className="font-['Inter']">Back to Dashboard</span>
+              </Link>
+              {isDirty && saveStatus !== "saving" && (
+                <span className="text-sm text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-3 py-1 font-['Inter']">
+                  Unsaved changes
+                </span>
+              )}
+            </div>
+            <div>
+              <h1 className="font-['Fraunces'] text-3xl lg:text-4xl">ICP Profile</h1>
+              <p className="font-['Inter'] text-foreground/70">
+                Review and edit your ideal customer profile.
+              </p>
+            </div>
+          </div>
+        }
+        headerRight={
+          <div className="flex items-center gap-3 flex-wrap">
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              className="border-black rounded-design px-4 py-2 flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export PDF</span>
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-6 py-2 flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+            {saveStatus === "saved" && !isDirty && (
+              <span className="text-sm text-green-700 bg-green-100 border border-green-300 rounded-full px-3 py-1 font-['Inter']">
+                Saved
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="text-sm text-red-700 bg-red-100 border border-red-300 rounded-full px-3 py-1 font-['Inter']">
+                Save failed
+              </span>
+            )}
+          </div>
+        }
+        profileCardTopRow={
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="w-full sm:max-w-md">
+              <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Brand</p>
+              <select
+                value={currentBrandId ?? ""}
+                onChange={(e) => handleBrandChange(e.target.value)}
+                className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                disabled={brandsLoading || brandSaveStatus === "saving"}
+              >
+                <option value="">
+                  {brandsLoading ? "Loading brands…" : "No brand allocated"}
+                </option>
+                {(brands || []).map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+              <div className="mt-2 flex items-center gap-3 text-xs font-['Inter'] text-foreground/60">
+                <span>Changing this saves immediately (no need to hit Save Changes).</span>
+                <span>
+                  {brandSaveStatus === "saving" && "Saving…"}
+                  {brandSaveStatus === "saved" && "Saved"}
+                  {brandSaveStatus === "error" && "Failed"}
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+        profileMain={
+          <div className="space-y-8">
+            <div>
+              {/* ICP “card-style” banner with avatar + menu */}
+              <div>
+                {/* Banner strip (clipped so corners stay clean) */}
+                <div className="relative border border-black rounded-design overflow-hidden">
+                  <div
+                    className="h-24 sm:h-28 md:h-32 border-b border-black"
+                    style={{ backgroundColor: icpHeaderColor }}
+                  />
+
+                  <div className="absolute top-3 right-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          className="p-1.5 bg-background rounded-full border border-black hover:scale-105 transition-transform h-9 w-9 flex items-center justify-center"
+                          aria-label="ICP actions"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="min-w-[200px] border border-black rounded-design bg-neutral-light text-foreground shadow-lg"
+                      >
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            handleDuplicate();
+                          }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            handleExport();
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export as PDF
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            handleOpenColorModal();
+                          }}
+                        >
+                          <Palette className="h-4 w-4 mr-2" />
+                          Change Colour
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            handleOpenAvatarModal();
+                          }}
+                        >
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          Change Avatar
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="text-sm"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            setMoveBrandId(((icpData as any)?.brand_id ?? null) as any);
+                            setMoveBrandOpen(true);
+                          }}
+                        >
+                          <FolderPlus className="h-4 w-4 mr-2" />
+                          Move to brand…
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem
+                          className="text-sm text-red-600 focus:text-red-600"
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            (e as any).stopPropagation?.();
+                            handleDelete();
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete ICP
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                {/* Avatar (NOT clipped; overlaps banner via negative margin) */}
+                <div className="relative flex justify-center -mt-10 sm:-mt-12 md:-mt-16">
+                  <div className="rounded-full border-2 border-black shadow-md overflow-hidden bg-white w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40">
+                    <img
+                      src={icpAvatarSrc}
+                      alt={icpData.name || "ICP avatar"}
+                      className="w-full h-full object-cover bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <div className="border border-black rounded-design p-4 bg-white">
+                  <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Name</p>
+                  <Input
+                    type="text"
+                    value={icpData.name || ""}
+                    onChange={(e) => setICPData({ ...icpData, name: e.target.value })}
+                    placeholder="ICP Name"
+                    className="font-['Fraunces'] text-2xl border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
-                <button 
-                  className="absolute -bottom-1 -right-1 w-8 h-8 bg-background border border-black rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                  title="Change avatar"
-                >
-                  <Sparkles className="w-4 h-4" />
-                </button>
+
+                <div className="border border-black rounded-design p-4 bg-white">
+                  <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Description</p>
+                  <Textarea
+                    value={icpData.description || ""}
+                    onChange={(e) => setICPData({ ...icpData, description: e.target.value })}
+                    placeholder="Description"
+                    className="font-['Inter'] text-sm border-none bg-transparent p-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    rows={3}
+                  />
+                </div>
               </div>
-              
-              {/* Color Picker below avatar */}
-              <div className="text-center">
-                <label className="block font-['Inter'] text-xs text-foreground/70 mb-2">
-                  Badge Color
-                </label>
-                <input
-                  type="color"
-                  value={icpData.circleColor}
-                  onChange={(e) => setICPData({ ...icpData, circleColor: e.target.value })}
-                  className="w-12 h-12 rounded-[10px] border border-black cursor-pointer mx-auto block"
+
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border border-black rounded-design p-4 bg-white">
+                  <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Industry</p>
+                  <Input
+                    type="text"
+                    value={icpData.industry || ""}
+                    onChange={(e) => setICPData({ ...icpData, industry: e.target.value })}
+                    placeholder="Industry"
+                    className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+
+                <div className="border border-black rounded-design p-4 bg-white">
+                  <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Company size</p>
+                  <Input
+                    type="text"
+                    value={icpData.company_size || ""}
+                    onChange={(e) => setICPData({ ...icpData, company_size: e.target.value })}
+                    placeholder="Company Size"
+                    className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+
+                <div className="border border-black rounded-design p-4 bg-white">
+                  <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Location</p>
+                  <Input
+                    type="text"
+                    value={icpData.location || ""}
+                    onChange={(e) => setICPData({ ...icpData, location: e.target.value })}
+                    placeholder="Location"
+                    className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+              </div>
+
+              {/* Budget */}
+              <div className="border border-black rounded-design p-4 bg-white">
+                <p className="font-['Inter'] text-xs text-foreground/60 mb-1">Budget</p>
+                <Input
+                  type="text"
+                  value={icpData.budget || ""}
+                  onChange={(e) => setICPData({ ...icpData, budget: e.target.value })}
+                  placeholder="Budget"
+                  className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </div>
             </div>
 
-            {/* Name & Bio */}
-            <div className="flex-1">
-              <Input
-                type="text"
-                value={icpData.persona_name}
-                onChange={(e) => setICPData({ ...icpData, persona_name: e.target.value })}
-                className="font-['Fraunces'] text-2xl mb-3 border-black rounded-[10px]"
-              />
-              
-              <Input
-                type="text"
-                value={icpData.age_range}
-                onChange={(e) => setICPData({ ...icpData, age_range: e.target.value })}
-                placeholder="Age range (e.g., 28-38)"
-                className="font-['Inter'] text-sm mb-3 border-black rounded-[10px]"
-              />
+            {/* Sections */}
+            <div className="space-y-4">
+              {/* Goals */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-100">
+                <EditableListSection
+                  title="Goals & Motivations"
+                  items={icpData.goals || []}
+                  onChange={(items) => setICPData({ ...icpData, goals: items })}
+                />
+              </div>
 
-              <Textarea
-                value={icpData.bio}
-                onChange={(e) => setICPData({ ...icpData, bio: e.target.value })}
-                className="font-['Inter'] text-sm italic border-black rounded-[10px] resize-none"
-                rows={2}
-              />
+              {/* Pain Points */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-150">
+                <EditableListSection
+                  title="Pain Points"
+                  items={icpData.pain_points || []}
+                  onChange={(items) => setICPData({ ...icpData, pain_points: items })}
+                />
+              </div>
+
+              {/* Decision Makers */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-200">
+                <EditableListSection
+                  title="Decision Makers"
+                  items={icpData.decision_makers || []}
+                  onChange={(items) => setICPData({ ...icpData, decision_makers: items })}
+                />
+              </div>
+
+              {/* Digital Tools & Platforms */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-250">
+                <EditableListSection
+                  title="Digital Tools & Platforms"
+                  items={icpData.tech_stack || []}
+                  onChange={(items) => setICPData({ ...icpData, tech_stack: items })}
+                />
+              </div>
+
+              {/* Challenges */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-300">
+                <EditableListSection
+                  title="Challenges"
+                  items={icpData.challenges || []}
+                  onChange={(items) => setICPData({ ...icpData, challenges: items })}
+                />
+              </div>
+
+              {/* Opportunities */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-350">
+                <EditableListSection
+                  title="Opportunities"
+                  items={icpData.opportunities || []}
+                  onChange={(items) => setICPData({ ...icpData, opportunities: items })}
+                />
+              </div>
+
+              {/* Marketing Strategy */}
+              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-[400ms]">
+                <h3 className="font-['Fraunces'] text-xl mb-2">Marketing Strategy</h3>
+                {strategyLoading ? (
+                  <p className="text-sm text-foreground/60 font-['Inter']">Loading strategy…</p>
+                ) : strategy ? (
+                  <div className="space-y-4">
+                    <div className="border border-black rounded-design p-4 bg-white">
+                      <h4 className="font-['Fraunces'] text-lg mb-2">Positioning</h4>
+                      <p className="text-sm font-['Inter'] text-foreground/80">
+                        <span className="font-semibold">One-liner:</span> {strategy.positioning?.one_liner}
+                      </p>
+                      <p className="text-sm font-['Inter'] text-foreground/80 mt-2">
+                        <span className="font-semibold">Why us:</span> {strategy.positioning?.why_us}
+                      </p>
+                      <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] mt-2 space-y-1">
+                        {(strategy.positioning?.differentiators || []).map((item, index) => (
+                          <li key={`diff-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="border border-black rounded-design p-4 bg-white">
+                      <h4 className="font-['Fraunces'] text-lg mb-2">Messaging</h4>
+                      <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Value props</p>
+                      <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                        {(strategy.messaging?.value_props || []).map((item, index) => (
+                          <li key={`vp-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                      <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Pain to promise</p>
+                      <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                        {(strategy.messaging?.pain_to_promise || []).map((item, index) => (
+                          <li key={`ptp-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                      <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Objections & rebuttals</p>
+                      <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                        {(strategy.messaging?.objections_and_rebuttals || []).map((item, index) => (
+                          <li key={`obr-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="border border-black rounded-design p-4 bg-white">
+                      <h4 className="font-['Fraunces'] text-lg mb-2">Campaign ideas</h4>
+                      <div className="space-y-3">
+                        {(strategy.campaign_ideas || []).map((idea, index) => (
+                          <div key={`campaign-${index}`} className="border border-black/10 rounded-design p-3 bg-white">
+                            <p className="text-sm font-['Inter'] text-foreground/80">
+                              <span className="font-semibold">{idea.name}:</span> {idea.hook}
+                            </p>
+                            <p className="text-sm font-['Inter'] text-foreground/70 mt-1">{idea.angle}</p>
+                            <p className="text-sm font-['Inter'] text-foreground/70 mt-1">CTA: {idea.cta}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Channel plan</h4>
+                        <p className="text-sm font-['Inter'] text-foreground/80">
+                          <span className="font-semibold">Primary:</span> {strategy.channel_plan?.primary_channel}
+                        </p>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-2">Secondary</p>
+                        <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                          {(strategy.channel_plan?.secondary_channels || []).map((item, index) => (
+                            <li key={`secondary-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">First 14 days</p>
+                        <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                          {(strategy.channel_plan?.first_14_days || []).map((item, index) => (
+                            <li key={`first14-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Offer</h4>
+                        <p className="text-sm font-['Inter'] text-foreground/80">
+                          <span className="font-semibold">Recommended:</span> {strategy.offer?.recommended_offer}
+                        </p>
+                        <p className="text-sm font-['Inter'] text-foreground/80 mt-2">
+                          <span className="font-semibold">Lead magnet:</span>{" "}
+                          {strategy.offer?.lead_magnet_idea || "—"}
+                        </p>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Landing page sections</p>
+                        <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                          {(strategy.offer?.landing_page_sections || []).map((item, index) => (
+                            <li key={`landing-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Ad assets</h4>
+                        {strategy.ad_assets ? (
+                          <>
+                            <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Headlines</p>
+                            <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                              {(strategy.ad_assets?.headlines || []).map((item, index) => (
+                                <li key={`headline-${index}`}>{item}</li>
+                              ))}
+                            </ul>
+                            <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Primary text</p>
+                            <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                              {(strategy.ad_assets?.primary_texts || []).map((item, index) => (
+                                <li key={`primary-${index}`}>{item}</li>
+                              ))}
+                            </ul>
+                            <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Creative briefs</p>
+                            <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                              {(strategy.ad_assets?.creative_briefs || []).map((item, index) => (
+                                <li key={`brief-${index}`}>{item}</li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <p className="text-sm font-['Inter'] text-foreground/60">Not included</p>
+                        )}
+                      </div>
+
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Success metrics</h4>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">KPIs</p>
+                        <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                          {(strategy.success_metrics?.kpis || []).map((item, index) => (
+                            <li key={`kpi-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1 mt-3">Targets</p>
+                        <ul className="list-disc list-inside text-sm text-foreground/80 font-['Inter'] space-y-1">
+                          {(strategy.success_metrics?.targets || []).map((item, index) => (
+                            <li key={`target-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-black rounded-design p-4 bg-white">
+                    <p className="text-sm font-['Inter'] text-foreground/70 mb-4">
+                      Generate a tailored marketing strategy for this ICP.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Goal</p>
+                        <select
+                          value={strategyGoal}
+                          onChange={(e) => setStrategyGoal(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="Generate qualified leads">Generate qualified leads</option>
+                          <option value="Increase conversions">Increase conversions</option>
+                          <option value="Launch a new offer">Launch a new offer</option>
+                          <option value="Improve retention">Improve retention</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Channel (optional)</p>
+                        <select
+                          value={strategyChannel}
+                          onChange={(e) => setStrategyChannel(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">No preference</option>
+                          <option value="Paid social">Paid social</option>
+                          <option value="Search">Search</option>
+                          <option value="LinkedIn organic">LinkedIn organic</option>
+                          <option value="Email">Email</option>
+                          <option value="Content">Content</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Offer type (optional)</p>
+                        <select
+                          value={strategyOfferType}
+                          onChange={(e) => setStrategyOfferType(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">No preference</option>
+                          <option value="Audit">Audit</option>
+                          <option value="Consultation">Consultation</option>
+                          <option value="Demo">Demo</option>
+                          <option value="Free trial">Free trial</option>
+                          <option value="Download">Download</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Tone (optional)</p>
+                        <select
+                          value={strategyTone}
+                          onChange={(e) => setStrategyTone(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">No preference</option>
+                          <option value="Direct">Direct</option>
+                          <option value="Friendly">Friendly</option>
+                          <option value="Premium">Premium</option>
+                          <option value="Educational">Educational</option>
+                        </select>
+                      </div>
+                    </div>
+                    {strategyError && (
+                      <p className="text-xs font-['Inter'] text-red-600 mt-3">
+                        {strategyError}
+                      </p>
+                    )}
+                    <div className="mt-4">
+                      <Button
+                        onClick={() =>
+                          generateStrategy({
+                            goal: strategyGoal,
+                            channel: strategyChannel || null,
+                            offerType: strategyOfferType || null,
+                            tone: strategyTone || null,
+                          })
+                        }
+                        disabled={strategyGenerating || !strategyGoal}
+                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-6 py-3"
+                      >
+                        {strategyGenerating ? "Generating…" : "Generate Strategy"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Free Sections */}
-        <div className="space-y-8">
-          {/* Goals */}
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-100">
-            <EditableListSection
-              title="Goals & Motivations"
-              items={icpData.goals}
-              field="goals"
-            />
-          </div>
-
-          {/* Pain Points */}
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-150">
-            <EditableListSection
-              title="Pain Points"
-              items={icpData.pain_points}
-              field="pain_points"
-            />
-          </div>
-
-          {/* Buying Triggers */}
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-200">
-            <EditableListSection
-              title="Buying Triggers"
-              items={icpData.buying_triggers}
-              field="buying_triggers"
-            />
-          </div>
-
-          {/* Locked Sections for Free Users */}
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-250">
-            <EditableListSection
-              title="Behaviour & Online Habits"
-              items={icpData.behaviours}
-              field="behaviours"
-              isLocked={userTier === "free"}
-            />
-          </div>
-
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-300">
-            <EditableListSection
-              title="Messaging That Resonates"
-              items={icpData.messaging}
-              field="messaging"
-              isLocked={userTier === "free"}
-            />
-          </div>
-
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-350">
-            <EditableListSection
-              title="Content Pillars"
-              items={icpData.content_pillars}
-              field="content_pillars"
-              isLocked={userTier === "free"}
-            />
-          </div>
-
-          {/* Meta Lookalike */}
-          <div className="bg-background border border-black rounded-[10px] p-6 shadow-md animate-fade-in-up delay-400">
-            <div className={`relative ${userTier === "free" ? 'opacity-60' : ''}`}>
-              {userTier === "free" && (
-                <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-[10px] z-10 flex items-center justify-center">
-                  <Lock className="w-6 h-6 text-foreground/60" />
-                </div>
-              )}
-              
-              <h3 className="font-['Fraunces'] text-lg mb-3">Meta Lookalike Audience</h3>
-              <Textarea
-                value={icpData.meta_lookalike}
-                onChange={(e) => setICPData({ ...icpData, meta_lookalike: e.target.value })}
-                className="font-['Inter'] text-sm border-black rounded-[10px]"
-                rows={3}
-                disabled={userTier === "free"}
-              />
+        }
+        footerCta={
+          effectiveTier === "free" ? (
+            <div className="text-center animate-fade-in-up">
+              <div className="bg-gradient-to-br from-[#FFD336]/20 to-[#FF9922]/20 rounded-design p-8">
+                <Lock className="w-8 h-8 mx-auto mb-4 text-foreground/60" />
+                <h3 className="font-['Fraunces'] text-xl mb-3">
+                  Unlock full editing & exports
+                </h3>
+                <p className="font-['Inter'] text-foreground/70 mb-6 max-w-md mx-auto">
+                  Upgrade to edit all sections, export to PDF/JSON, and unlock advanced features.
+                </p>
+                <Button
+                  className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+                  onClick={() => openPaywall()}
+                >
+                  Upgrade Now
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
+          ) : null
+        }
+      />
 
-        {/* Upgrade CTA for Free Users */}
-        {userTier === "free" && (
-          <div className="mt-12 text-center animate-fade-in-up">
-            <div className="bg-gradient-to-br from-[#FFD336]/20 to-[#FF9922]/20 border border-black rounded-[10px] p-8">
-              <Lock className="w-8 h-8 mx-auto mb-4 text-foreground/60" />
-              <h3 className="font-['Fraunces'] text-xl mb-3">
-                Unlock full editing & exports
-              </h3>
-              <p className="font-['Inter'] text-foreground/70 mb-6 max-w-md mx-auto">
-                Upgrade to edit all sections, export to PDF/JSON, and unlock advanced features.
-              </p>
-              <Button
-                className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+      <ICPColorModal
+        isOpen={icpColorModal.open}
+        id={icpColorModal.id}
+        currentColor={icpColorModal.currentColor}
+        onClose={() => setIcpColorModal({ open: false, id: null, currentColor: null })}
+        onSaved={(color) => {
+          const nextColor = color ?? null;
+          setIcpColorModal({ open: false, id: null, currentColor: null });
+
+          // Update UI immediately (and avoid "dirty" since it was already saved in modal)
+          setICPData((prev) => ({ ...prev, color: nextColor as any }));
+          if (originalDataRef.current) {
+            originalDataRef.current = { ...originalDataRef.current, color: nextColor as any };
+          }
+          setIsDirty(false);
+          setSaveStatus("idle");
+        }}
+      />
+
+      <ICPAvatarModal
+        isOpen={icpAvatarModal.open}
+        icpId={icpAvatarModal.id}
+        currentAvatarKey={icpAvatarModal.currentAvatarKey}
+        gender={icpAvatarModal.gender}
+        ageRange={icpAvatarModal.ageRange}
+        onClose={() =>
+          setIcpAvatarModal({
+            open: false,
+            id: null,
+            currentAvatarKey: null,
+            gender: null,
+            ageRange: null,
+          })
+        }
+        onSaved={(avatarKey) => {
+          const nextKey = avatarKey ?? null;
+          setIcpAvatarModal({ open: false, id: null, currentAvatarKey: null, gender: null, ageRange: null });
+
+          // Update UI immediately (and avoid "dirty" since it was already saved in modal)
+          setICPData((prev) => ({ ...prev, avatar_key: nextKey as any }));
+          if (originalDataRef.current) {
+            originalDataRef.current = { ...originalDataRef.current, avatar_key: nextKey as any };
+          }
+          setIsDirty(false);
+          setSaveStatus("idle");
+        }}
+      />
+      {moveBrandOpen && (
+        <div
+          className="modal-overlay"
+          onClick={() => setMoveBrandOpen(false)}
+        >
+          <div
+            className="modal-content modal-content-wide"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="font-['Fraunces'] text-2xl mb-2">Move ICP to brand</h2>
+            <p className="font-['Inter'] text-sm text-foreground/70 mb-4">
+              Choose a brand for this ICP. Selecting “No brand” will unassign it.
+            </p>
+
+            <select
+              value={moveBrandId ?? ""}
+              onChange={(e) => setMoveBrandId(e.target.value || null)}
+              className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+            >
+              <option value="">No brand allocated</option>
+              {(brands || []).map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="modal-buttons modal-buttons-2 mt-6">
+              <button
+                className="modal-cancel"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMoveBrandOpen(false);
+                }}
               >
-                Upgrade Now
-              </Button>
+                Cancel
+              </button>
+              <button
+                className="modal-save"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSaveMoveBrand();
+                }}
+              >
+                Save
+              </button>
             </div>
           </div>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </DashboardShell>
   );
 }

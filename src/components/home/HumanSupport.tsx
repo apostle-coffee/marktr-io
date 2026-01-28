@@ -1,5 +1,3 @@
-"use client";
-
 export function HumanSupport() {
   return (
     <section className="bg-background pt-4 pb-16 sm:pt-5 sm:pb-20 lg:pt-6 lg:pb-24">
@@ -43,7 +41,7 @@ export function HumanSupport() {
 
           {/* Button */}
           <div className="pt-6">
-            <button className="rounded-[10px] border border-black bg-[rgb(255,255,255)] px-8 py-3 transition-all hover:scale-105 hover:shadow-lg active:scale-95">
+            <button className="rounded-design border border-black bg-white px-8 py-3 transition-all hover:scale-105 hover:shadow-lg active:scale-95">
               Get in touch
             </button>
           </div>

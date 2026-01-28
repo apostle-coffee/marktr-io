@@ -1,14 +1,22 @@
-"use client";
-
-import { useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { DashboardHeader } from "../components/dashboard/DashboardHeader";
-import { DashboardSidebar } from "../components/dashboard/DashboardSidebar";
-import { ICPPreviewCard } from "../components/dashboard/ICPPreviewCard";
-import { PaywallModal } from "../components/paywall/PaywallModal";
-import { CheckoutModal } from "../components/paywall/CheckoutModal";
+import { DashboardHeader } from "../components/layout/DashboardHeader";
+import { DashboardSidebar } from "../components/layout/DashboardSidebar";
+import { ICPPreviewCard } from "../components/cards/ICPPreviewCard";
+import { CollectionPickerModal } from "../components/modals/CollectionPickerModal";
+import ICPColorModal from "../components/ICPColorModal";
+import ICPAvatarModal from "../components/ICPAvatarModal";
+import { useCollections } from "../hooks/useCollections";
+import { useICPs } from "../hooks/useICPs";
+import { useBrands } from "../hooks/useBrands";
+import useSubscription from "../hooks/useSubscription";
+import { canViewICP } from "../config/accessRules";
+import EditTags from "../components/collections/EditTags";
+import { supabase } from "../config/supabase";
+import { usePaywall } from "../contexts/PaywallContext";
+import { resolveAvatarSrc } from "../utils/avatar";
 import { 
   ArrowLeft, 
   Plus, 
@@ -17,126 +25,309 @@ import {
   FolderPlus,
   Search
 } from "lucide-react";
-import type { ICP } from "./Dashboard";
-// Placeholder avatars - replace with actual images
-const avatarSarah = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face";
-const avatarMarcus = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face";
-const avatarEmma = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face";
+
+// UI-friendly ICP interface with camelCase
+interface ICP {
+  id: string;
+  name: string;
+  description: string;
+  industry?: string;
+  color?: string | null;
+  companySize?: string;
+  location?: string;
+  painPoints?: string[];
+  goals?: string[];
+  budget?: string;
+  decisionMakers?: string[];
+  techStack?: string[];
+  challenges?: string[];
+  opportunities?: string[];
+  createdAt: string;
+  avatar?: string | null;
+  avatar_key?: string | null;
+  avatar_gender?: string | null;
+  avatar_age_range?: string | null;
+  gender?: string | null;
+  age_range?: string | null;
+  isLocked?: boolean;
+  _index?: number;
+}
 
 export default function CollectionView() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = useState(false);
-  const [collectionName, setCollectionName] = useState("Q1 2024 Campaigns");
-  const [tempName, setTempName] = useState(collectionName);
-  const [userTier, setUserTier] = useState<"free" | "paid">("free");
+  const [tempName, setTempName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
+  const [icpsInCollection, setICPsInCollection] = useState<ICP[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [icpColorModal, setIcpColorModal] = useState({
+    open: false,
+    id: null as string | null,
+    currentColor: null as string | null,
+  });
 
-  // Mock collection color
-  const collectionColor = "#BBA0E5";
+  const [icpAvatarModal, setIcpAvatarModal] = useState({
+    open: false,
+    id: null as string | null,
+    currentAvatarKey: null as string | null,
+    gender: null as string | null,
+    ageRange: null as string | null,
+  });
 
-  // Mock ICPs in this collection
-  const icpsInCollection: ICP[] = [
-    {
-      id: "1",
-      persona_name: "Sarah the Startup Founder",
-      age_range: "28-38",
-      bio: "Early-stage tech founder seeking product-market fit",
-      avatar: avatarSarah,
-      circleColor: "#BBA0E5",
-      tags: ["B2B SaaS", "Tech", "Startup"],
-      created_date: "2024-01-15",
-      isLocked: false,
-      collection: "Q1 2024 Campaigns"
-    },
-    {
-      id: "2",
-      persona_name: "Marcus the Marketing Manager",
-      age_range: "30-45",
-      bio: "Growth-focused marketer at a scaling B2B company",
-      avatar: avatarMarcus,
-      circleColor: "#FFD336",
-      tags: ["Marketing", "B2B", "Enterprise"],
-      created_date: "2024-01-14",
-      isLocked: userTier === "free",
-      collection: "Q1 2024 Campaigns"
-    },
-    {
-      id: "3",
-      persona_name: "Emma the E-commerce Owner",
-      age_range: "25-40",
-      bio: "Small business owner selling handmade products online",
-      avatar: avatarEmma,
-      circleColor: "#FF9922",
-      tags: ["E-commerce", "SMB", "Retail"],
-      created_date: "2024-01-13",
-      isLocked: userTier === "free",
-      collection: "Q1 2024 Campaigns"
+  const { getCollection, getCollectionICPs, updateCollection, deleteCollection, removeICPFromCollection, addICPToCollection } = useCollections();
+  const { icps: allICPs, updateICP, fetchICPs } = useICPs();
+  const { brands } = useBrands();
+  const { tier: userTier, effectiveTier, trialActive } = useSubscription();
+  const { openPaywall } = usePaywall();
+
+  const [collection, setCollection] = useState<{
+    id: string;
+    name: string;
+    color: string;
+    description?: string;
+    tags?: string[] | null;
+  } | null>(null);
+
+  const transformICPs = (icps: any[]) =>
+    icps.map((icp, index) => ({
+      id: icp.id,
+      name: icp.name,
+      description: icp.description,
+      industry: icp.industry,
+      companySize: icp.company_size,
+      location: icp.location,
+      painPoints: icp.pain_points || [],
+      goals: icp.goals || [],
+      budget: icp.budget,
+      decisionMakers: icp.decision_makers || [],
+      techStack: icp.tech_stack || [],
+      challenges: icp.challenges || [],
+      opportunities: icp.opportunities || [],
+      createdAt: icp.created_at,
+      color: icp.color || "#EDEDED",
+      brand_id: icp.brand_id ?? null,
+      brandName:
+        icp.brandName ??
+        (icp.brand && icp.brand.name) ??
+        (icp.brands && icp.brands.name) ??
+        null,
+      brand: icp.brand ?? null,
+      brands: icp.brands ?? null,
+      // New avatar system fields (if present in DB) + legacy fallback
+      avatar_key: icp.avatar_key ?? null,
+      gender: icp.gender ?? icp.avatar_gender ?? null,
+      age_range: icp.age_range ?? icp.avatar_age_range ?? null,
+      avatar_gender: icp.avatar_gender ?? null,
+      avatar_age_range: icp.avatar_age_range ?? null,
+      avatar: resolveAvatarSrc(
+        {
+          avatar_key: icp.avatar_key ?? null,
+          avatar_gender: icp.avatar_gender ?? icp.gender ?? null,
+          avatar_age_range: icp.avatar_age_range ?? icp.age_range ?? null,
+        },
+        icp.avatar ?? null
+      ),
+      isLocked: !canViewICP(effectiveTier as any, icp._index ?? index),
+      _index: icp._index ?? index,
+    }));
+
+  // Fetch collection and ICPs
+  useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      if (!id) {
+        navigate("/collections");
+        return;
+      }
+
+      setIsLoading(true);
+
+      const collectionData = await getCollection(id);
+      if (!isMounted) return;
+
+      if (!collectionData) {
+        navigate("/collections");
+        return;
+      }
+
+      setCollection({
+        id: collectionData.id,
+        name: collectionData.name,
+        color: collectionData.color || "#BBA0E5",
+        description: collectionData.description,
+        tags: collectionData.tags || [],
+      });
+      setTempName(collectionData.name);
+
+      const icps = await getCollectionICPs(id);
+      if (!isMounted) return;
+
+      setICPsInCollection(transformICPs(icps));
+      setIsLoading(false);
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, getCollection, getCollectionICPs, effectiveTier]);
+
+  const handleSaveName = async () => {
+    if (!collection || !tempName.trim()) return;
+    
+    const success = await updateCollection(collection.id, { name: tempName.trim() });
+    if (success) {
+      setCollection({ ...collection, name: tempName.trim() });
+      setIsEditingName(false);
     }
-  ];
-
-  const handleSaveName = () => {
-    setCollectionName(tempName);
-    setIsEditingName(false);
   };
 
   const handleCancelEdit = () => {
-    setTempName(collectionName);
+    if (collection) {
+      setTempName(collection.name);
+    }
     setIsEditingName(false);
   };
 
-  const handleDeleteCollection = () => {
-    console.log("Delete collection");
-    navigate("/collections");
+  const handleDeleteCollection = async () => {
+    if (!collection) return;
+    
+    if (window.confirm("Are you sure you want to delete this collection? All ICPs will remain but will be removed from this collection.")) {
+      const success = await deleteCollection(collection.id);
+      if (success) {
+        navigate("/collections");
+      }
+    }
+  };
+
+  const handleRemoveICP = async (icpId: string) => {
+    if (!collection) return;
+    
+    const success = await removeICPFromCollection(collection.id, icpId);
+    if (success) {
+      // Optimistic update
+      setICPsInCollection(prev => prev.filter(icp => icp.id !== icpId));
+    }
   };
 
   const handleAddICPs = () => {
-    console.log("Add ICPs to collection");
+    setIsPickerOpen(true);
+  };
+
+  const handleAssignICPs = async (selectedIcpIds: string[]) => {
+    if (!collection?.id || selectedIcpIds.length === 0) return;
+    setIsAdding(true);
+    setAddError(null);
+    try {
+      for (const icpId of selectedIcpIds) {
+        await addICPToCollection(collection.id, icpId);
+      }
+      const updated = await getCollectionICPs(collection.id);
+      setICPsInCollection(transformICPs(updated));
+    } catch (err) {
+      console.error("Error adding ICPs to collection:", err);
+      setAddError(err instanceof Error ? err.message : "Failed to add ICPs to collection.");
+    } finally {
+      setIsAdding(false);
+      setIsPickerOpen(false);
+    }
   };
 
   const handleUpgrade = () => {
-    console.log("Upgrade to paid");
-    setShowPaywall(true);
+    openPaywall();
   };
 
-  const handleUpgradeWithPlan = (plan: "monthly" | "annual") => {
-    setSelectedPlan(plan);
-    setShowPaywall(false);
-    setShowCheckout(true);
+  const handleOpenIcpColorModal = (id: string, currentColor?: string | null) => {
+    setIcpColorModal({
+      open: true,
+      id,
+      currentColor: currentColor ?? null,
+    });
   };
 
-  const handleCheckoutBack = () => {
-    setShowCheckout(false);
-    setShowPaywall(true);
+  const handleOpenIcpAvatarModal = (
+    id: string,
+    currentAvatarKey?: string | null,
+    gender?: string | null,
+    ageRange?: string | null
+  ) => {
+    setIcpAvatarModal({
+      open: true,
+      id,
+      currentAvatarKey: currentAvatarKey ?? null,
+      gender: gender ?? null,
+      ageRange: ageRange ?? null,
+    });
   };
 
-  const handleCheckoutSuccess = () => {
-    setShowCheckout(false);
-    navigate("/payment-success");
+  const handleMoveIcpToBrand = async (icpId: string, brandId: string | null) => {
+    await updateICP(icpId, { brand_id: brandId } as any);
+    try {
+      window.dispatchEvent(new Event("icps:changed"));
+    } catch {}
+    try {
+      await fetchICPs(true);
+    } catch {}
   };
 
-  const handleContinueFree = () => {
-    setShowPaywall(false);
-    console.log("User continued with free tier");
+  const refreshCollectionICPs = async () => {
+    if (!id) return;
+    const updated = await getCollectionICPs(id);
+    setICPsInCollection(transformICPs(updated));
   };
 
-  const filteredICPs = icpsInCollection.filter(icp =>
-    icp.persona_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    icp.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+  const handleTagsChange = async (newTags: string[]) => {
+    if (!collection) return;
+    setCollection((prev) => (prev ? { ...prev, tags: newTags } : prev));
+    try {
+      await supabase.from("collections").update({ tags: newTags }).eq("id", collection.id);
+    } catch (err) {
+      console.error("Failed to update tags", err);
+    }
+  };
+
+  const filteredICPs = useMemo(() => {
+    return icpsInCollection.filter(icp =>
+      icp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      icp.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      icp.industry?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [icpsInCollection, searchQuery]);
+
+  const availableICPs = (allICPs || []).filter(
+    (icp) => !icpsInCollection.some((existing) => existing.id === icp.id)
   );
 
-  const showEmptyState = icpsInCollection.length === 0;
+  const showEmptyState = !isLoading && icpsInCollection.length === 0;
+
+  if (isLoading || !collection) {
+    return (
+      <div className="min-h-screen bg-background flex">
+        <DashboardSidebar
+          userTier={userTier === "free" && !trialActive ? "free" : "paid"}
+          onUpgrade={handleUpgrade}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 border-4 border-button-green border-t-transparent rounded-full animate-spin" />
+            <p className="text-foreground/70">Loading collection...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <DashboardSidebar
-        currentView="collections"
-        onViewChange={() => {}}
-        userTier={userTier}
+        userTier={userTier === "free" && !trialActive ? "free" : "paid"}
         onUpgrade={handleUpgrade}
       />
 
@@ -144,8 +335,7 @@ export default function CollectionView() {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <DashboardHeader
-          onCreateNew={() => {}}
-          userTier={userTier}
+          userTier={userTier === "free" && !trialActive ? "free" : "paid"}
           onUpgrade={handleUpgrade}
         />
 
@@ -163,10 +353,10 @@ export default function CollectionView() {
 
             {/* Collection Header */}
             <div 
-              className="bg-background border border-black rounded-[10px] p-6 lg:p-8 mb-8 shadow-md"
+              className="bg-background border border-black rounded-design p-6 lg:p-8 mb-8 shadow-md"
               style={{ 
                 borderTopWidth: '6px',
-                borderTopColor: collectionColor 
+                borderTopColor: collection.color 
               }}
             >
               <div className="flex items-start justify-between gap-4 mb-4">
@@ -174,14 +364,14 @@ export default function CollectionView() {
                   {!isEditingName ? (
                     <div className="flex items-center gap-3 group">
                       <h1 className="font-['Fraunces'] text-3xl lg:text-4xl">
-                        {collectionName}
+                        {collection.name}
                       </h1>
                       <button
                         onClick={() => {
                           setIsEditingName(true);
-                          setTempName(collectionName);
+                          setTempName(collection.name);
                         }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-accent-grey/20 rounded-[10px]"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-accent-grey/20 rounded-design"
                         aria-label="Edit collection name"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -192,7 +382,7 @@ export default function CollectionView() {
                       <Input
                         value={tempName}
                         onChange={(e) => setTempName(e.target.value)}
-                        className="font-['Fraunces'] text-3xl lg:text-4xl border-black rounded-[10px] h-auto py-2"
+                        className="font-['Fraunces'] text-3xl lg:text-4xl border-black rounded-design h-auto py-2"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSaveName();
@@ -202,7 +392,7 @@ export default function CollectionView() {
                       <Button
                         onClick={handleSaveName}
                         size="sm"
-                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px]"
+                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design"
                       >
                         Save
                       </Button>
@@ -210,7 +400,7 @@ export default function CollectionView() {
                         onClick={handleCancelEdit}
                         size="sm"
                         variant="outline"
-                        className="border-black rounded-[10px]"
+                        className="border-black rounded-design"
                       >
                         Cancel
                       </Button>
@@ -224,7 +414,7 @@ export default function CollectionView() {
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={handleAddICPs}
-                    className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-4 py-2 lg:px-6 lg:py-5 transition-all hover:scale-[1.02] hover:shadow-md"
+                    className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-4 py-2 lg:px-6 lg:py-5 transition-all hover:scale-[1.02] hover:shadow-md"
                   >
                     <Plus className="w-4 h-4 lg:mr-2" />
                     <span className="hidden lg:inline">Add ICPs</span>
@@ -232,12 +422,24 @@ export default function CollectionView() {
                   <Button
                     onClick={handleDeleteCollection}
                     variant="outline"
-                    className="border-black rounded-[10px] px-4 py-2 lg:px-6 lg:py-5 text-red-600 hover:bg-red-50 transition-all"
+                    className="border-black rounded-design px-4 py-2 lg:px-6 lg:py-5 text-red-600 hover:bg-red-50 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Edit Tags */}
+            <div className="bg-background border border-black rounded-design p-6 mb-8">
+              <h3 className="font-['Fraunces'] text-xl mb-3">Edit Tags</h3>
+              <p className="font-['Inter'] text-sm text-foreground/70 mb-3">
+                Add up to 3 tags to organise this collection.
+              </p>
+              <EditTags
+                tags={collection.tags || []}
+                onChange={handleTagsChange}
+              />
             </div>
 
             {/* Search Bar */}
@@ -250,7 +452,7 @@ export default function CollectionView() {
                     placeholder="Search ICPs in this collection..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 border-black rounded-[10px] font-['Inter']"
+                    className="pl-10 border-black rounded-design font-['Inter']"
                   />
                 </div>
               </div>
@@ -259,7 +461,7 @@ export default function CollectionView() {
             {/* Empty State */}
             {showEmptyState && (
               <div className="text-center py-16 animate-fade-in-up">
-                <div className="bg-accent-grey/20 border border-black rounded-[10px] p-12 max-w-2xl mx-auto">
+                <div className="bg-accent-grey/20 border border-black rounded-design p-12 max-w-2xl mx-auto">
                   <div className="mb-6">
                     <div className="w-24 h-24 bg-button-green/20 rounded-full border border-black flex items-center justify-center mx-auto mb-4">
                       <FolderPlus className="w-12 h-12 text-foreground/60" />
@@ -273,7 +475,7 @@ export default function CollectionView() {
                   </p>
                   <Button
                     onClick={handleAddICPs}
-                    className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+                    className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add ICPs
@@ -290,17 +492,23 @@ export default function CollectionView() {
                     <ICPPreviewCard
                       key={icp.id}
                       icp={icp}
-                      userTier={userTier}
+                      userTier={effectiveTier}
                       onUpgrade={handleUpgrade}
                       isInCollection={true}
+                      onRemoveFromCollection={() => handleRemoveICP(icp.id)}
+                      onChangeColor={handleOpenIcpColorModal}
+                      onChangeAvatar={handleOpenIcpAvatarModal}
+                      brands={brands?.map((b) => ({ id: b.id, name: b.name })) || []}
+                      onMoveToBrand={handleMoveIcpToBrand}
+                      isLocked={!canViewICP(effectiveTier as any, icp._index ?? 0)}
                     />
                   ))}
                 </div>
 
                 {/* Free User Limit Message */}
-                {userTier === "free" && icpsInCollection.length > 1 && (
+                {userTier === "free" && !trialActive && icpsInCollection.length > 1 && (
                   <div className="mt-12 text-center animate-fade-in-up">
-                    <div className="bg-accent-grey/30 border border-black rounded-[10px] p-8 max-w-2xl mx-auto">
+                    <div className="bg-accent-grey/30 border border-black rounded-design p-8 max-w-2xl mx-auto">
                       <h3 className="font-['Fraunces'] text-xl mb-3">
                         Unlock all ICPs in this collection
                       </h3>
@@ -309,7 +517,7 @@ export default function CollectionView() {
                       </p>
                       <Button
                         onClick={handleUpgrade}
-                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
                       >
                         Upgrade Now
                       </Button>
@@ -331,23 +539,55 @@ export default function CollectionView() {
         </main>
       </div>
 
-      {/* Paywall Modal */}
-      <PaywallModal
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        onUpgrade={handleUpgradeWithPlan}
-        onContinueFree={handleContinueFree}
+      <CollectionPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        icps={availableICPs.map((icp) => ({ id: icp.id, name: icp.name }))}
+        multiple={true}
+        onConfirm={handleAssignICPs}
       />
 
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={showCheckout}
-        onClose={() => setShowCheckout(false)}
-        onSuccess={handleCheckoutSuccess}
-        onBack={handleCheckoutBack}
-        plan={selectedPlan}
-        userEmail="demo@example.com"
+      <ICPColorModal
+        isOpen={icpColorModal.open}
+        id={icpColorModal.id}
+        currentColor={icpColorModal.currentColor}
+        onClose={() => setIcpColorModal({ open: false, id: null, currentColor: null })}
+        onSaved={async () => {
+          setIcpColorModal({ open: false, id: null, currentColor: null });
+          await refreshCollectionICPs();
+        }}
       />
+
+      <ICPAvatarModal
+        isOpen={icpAvatarModal.open}
+        icpId={icpAvatarModal.id}
+        currentAvatarKey={icpAvatarModal.currentAvatarKey}
+        gender={icpAvatarModal.gender}
+        ageRange={icpAvatarModal.ageRange}
+        onClose={() =>
+          setIcpAvatarModal({
+            open: false,
+            id: null,
+            currentAvatarKey: null,
+            gender: null,
+            ageRange: null,
+          })
+        }
+        onSaved={async () => {
+          await refreshCollectionICPs();
+        }}
+      />
+
+      {isAdding && (
+        <div className="fixed bottom-4 right-4 bg-background border border-black rounded-design px-4 py-2 shadow-lg">
+          Adding ICPs...
+        </div>
+      )}
+      {addError && (
+        <div className="fixed bottom-4 right-4 bg-red-50 border border-red-300 text-red-800 rounded-design px-4 py-2 shadow-lg">
+          {addError}
+        </div>
+      )}
     </div>
   );
 }

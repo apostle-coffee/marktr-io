@@ -1,12 +1,6 @@
-"use client";
-
-import { Avatar } from "./Avatar";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { useState } from "react";
 
 export function Hero() {
-  const [email, setEmail] = useState("");
 
   return (
     <section className="relative overflow-hidden bg-background pt-8 pb-0 sm:pt-10 sm:pb-0 lg:pt-14 lg:pb-0">

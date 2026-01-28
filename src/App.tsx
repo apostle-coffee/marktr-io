@@ -1,65 +1,145 @@
-"use client";
-
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { PaywallProvider } from "./contexts/PaywallContext";
+import { AuthModalProvider } from "./contexts/AuthModalContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AdminRoute } from "./components/auth/AdminRoute";
 import { Header, Footer } from "./components";
 import Home from "./pages/Home";
 import OnboardingBuild from "./pages/OnboardingBuild";
-import ICPResults from "./pages/ICPResults";
+import GuestDashboardPreview from "./pages/GuestDashboardPreview";
 import Dashboard from "./pages/Dashboard";
 import ICPEditor from "./pages/ICPEditor";
+import MyICPsPage from "./pages/MyICPs";
 import Collections from "./pages/Collections";
 import CollectionView from "./pages/CollectionView";
 import PaywallDemo from "./pages/PaywallDemo";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import MyAccount from "./pages/MyAccount";
+import Admin from "./pages/Admin";
 import Pricing from "./pages/Pricing";
 import TeamSettings from "./pages/TeamSettings";
+import ResetPassword from "./pages/ResetPassword";
+import Logout from "./pages/Logout";
+import AuthCallback from "./pages/AuthCallback";
+import CheckEmail from "./pages/CheckEmail";
+import MyBrands from "./pages/MyBrands";
+import BrandEditor from "./pages/BrandEditor";
+import GuestIcpPreview from "./pages/GuestIcpPreview";
+
+function AuthRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return <Navigate to={user ? "/dashboard" : "/icp-results"} replace />;
+}
 
 export default function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-background">
-        <Routes>
-          {/* Routes with Header/Footer */}
-          <Route path="/" element={
-            <>
-              <Header />
-              <Home />
-              <Footer />
-            </>
-          } />
-          
-          <Route path="/pricing" element={
-            <>
-              <Header />
-              <Pricing />
-              <Footer />
-            </>
-          } />
-          
-          {/* Routes without Header/Footer */}
-          <Route path="/onboarding-build" element={<OnboardingBuild />} />
-          <Route path="/icp-results" element={<ICPResults />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/icp/:id" element={<ICPEditor />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/collections/:id" element={<CollectionView />} />
-          <Route path="/paywall-demo" element={<PaywallDemo />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/account" element={<MyAccount />} />
-          <Route path="/team" element={<TeamSettings />} />
-          
-          {/* Catch-all route for preview and other unmatched routes */}
-          <Route path="*" element={
-            <>
-              <Header />
-              <Home />
-              <Footer />
-            </>
-          } />
-        </Routes>
-      </div>
-    </Router>
+    <AuthProvider>
+      <PaywallProvider>
+        <AuthModalProvider>
+          <Router>
+            <div className="min-h-screen bg-background">
+              <Routes>
+            {/* Public Routes with Header/Footer */}
+            <Route path="/" element={
+              <>
+                <Header />
+                <Home />
+                <Footer />
+              </>
+            } />
+            
+            <Route path="/pricing" element={
+              <>
+                <Header />
+                <Pricing />
+                <Footer />
+              </>
+            } />
+            
+            {/* Auth Routes */}
+            <Route path="/login" element={<AuthRedirect />} />
+            <Route path="/signup" element={<AuthRedirect />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/logout" element={<Logout />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            
+            {/* Public Routes without Header/Footer */}
+            <Route path="/onboarding-build" element={<OnboardingBuild />} />
+          <Route path="/icp-results" element={<GuestDashboardPreview />} />
+          <Route path="/icp-preview/:index" element={<GuestIcpPreview />} />
+            <Route path="/paywall-demo" element={<PaywallDemo />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
+            
+            {/* Protected Dashboard Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/icp/:id" element={
+              <ProtectedRoute>
+                <ICPEditor />
+              </ProtectedRoute>
+            } />
+            <Route path="/icps" element={
+              <ProtectedRoute>
+                <MyICPsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-brands" element={
+              <ProtectedRoute>
+                <MyBrands />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-brands/:id" element={
+              <ProtectedRoute>
+                <BrandEditor />
+              </ProtectedRoute>
+            } />
+            <Route path="/collections" element={
+              <ProtectedRoute>
+                <Collections />
+              </ProtectedRoute>
+            } />
+            <Route path="/collections/:id" element={
+              <ProtectedRoute>
+                <CollectionView />
+              </ProtectedRoute>
+            } />
+            <Route path="/account" element={
+              <ProtectedRoute>
+                <MyAccount />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <Admin />
+                </AdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/team" element={
+              <ProtectedRoute>
+                <TeamSettings />
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch-all route for preview and other unmatched routes */}
+            <Route path="*" element={
+              <>
+                <Header />
+                <Home />
+                <Footer />
+              </>
+            } />
+              </Routes>
+            </div>
+          </Router>
+        </AuthModalProvider>
+      </PaywallProvider>
+    </AuthProvider>
   );
 }
-

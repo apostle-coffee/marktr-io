@@ -1,5 +1,3 @@
-"use client";
-
 export function ClosingMessage() {
   return (
     <section className="bg-background py-12 sm:py-16 pb-6 sm:pb-8">

@@ -1,5 +1,3 @@
-"use client";
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { CheckCircle2, Sparkles, CreditCard } from "lucide-react";
@@ -30,7 +28,7 @@ export default function PaymentSuccess() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         {/* Success Card */}
-        <div className="bg-gradient-to-br from-button-green/20 via-[#BBA0E5]/10 to-[#FFD336]/10 border border-black rounded-[10px] p-8 lg:p-12 text-center shadow-2xl animate-fade-in-up">
+        <div className="bg-gradient-to-br from-button-green/20 via-[#BBA0E5]/10 to-[#FFD336]/10 border border-black rounded-design p-8 lg:p-12 text-center shadow-2xl animate-fade-in-up">
           {/* Celebration Icon */}
           <div className="mb-6">
             <div className="w-24 h-24 bg-button-green rounded-full border-2 border-black flex items-center justify-center mx-auto mb-4 relative animate-bounce-subtle">
@@ -50,7 +48,7 @@ export default function PaymentSuccess() {
           </p>
 
           {/* What's Unlocked */}
-          <div className="bg-background border border-black rounded-[10px] p-6 mb-8 text-left">
+          <div className="bg-background border border-black rounded-design p-6 mb-8 text-left">
             <h2 className="font-['Fraunces'] text-xl mb-4 text-center">You now have access to:</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
@@ -93,7 +91,7 @@ export default function PaymentSuccess() {
           </div>
 
           {/* Renewal Information */}
-          <div className="bg-accent-grey/30 border border-warm-grey rounded-[10px] p-4 mb-8">
+          <div className="bg-accent-grey/30 border border-warm-grey rounded-design p-4 mb-8">
             <div className="flex items-start gap-3 text-left">
               <CreditCard className="w-5 h-5 text-foreground/60 flex-shrink-0 mt-0.5" />
               <div>
@@ -111,7 +109,7 @@ export default function PaymentSuccess() {
           <div className="space-y-4">
             <Button
               onClick={handleGoToDashboard}
-              className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg font-['Inter']"
+              className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg font-['Inter']"
             >
               Go to Dashboard
             </Button>

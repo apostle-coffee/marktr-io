@@ -1,37 +1,10 @@
-"use client";
-
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
-import { PaywallModal } from "../components/paywall/PaywallModal";
-import { CheckoutModal } from "../components/paywall/CheckoutModal";
+import { usePaywall } from "../contexts/PaywallContext";
 
 export default function PaywallDemo() {
   const navigate = useNavigate();
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
-
-  const handleUpgrade = (plan: "monthly" | "annual") => {
-    setSelectedPlan(plan);
-    setShowPaywall(false);
-    setShowCheckout(true);
-  };
-
-  const handleCheckoutBack = () => {
-    setShowCheckout(false);
-    setShowPaywall(true);
-  };
-
-  const handleCheckoutSuccess = () => {
-    setShowCheckout(false);
-    navigate("/payment-success");
-  };
-
-  const handleContinueFree = () => {
-    setShowPaywall(false);
-    console.log("User continued with free tier");
-  };
+  const { openPaywall } = usePaywall();
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -45,8 +18,8 @@ export default function PaywallDemo() {
 
         <div className="space-y-4">
           <Button
-            onClick={() => setShowPaywall(true)}
-            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg"
+            onClick={() => openPaywall()}
+            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg"
           >
             Open Paywall Modal
           </Button>
@@ -55,7 +28,7 @@ export default function PaywallDemo() {
             <Button
               onClick={() => navigate("/dashboard")}
               variant="outline"
-              className="border-black rounded-[10px] px-6 py-3"
+              className="border-black rounded-design px-6 py-3"
             >
               Back to Dashboard
             </Button>
@@ -63,7 +36,7 @@ export default function PaywallDemo() {
         </div>
 
         {/* Flow Description */}
-        <div className="mt-12 bg-accent-grey/20 border border-black rounded-[10px] p-6 text-left">
+        <div className="mt-12 bg-accent-grey/20 border border-black rounded-design p-6 text-left">
           <h2 className="font-['Fraunces'] text-xl mb-4">Flow Steps:</h2>
           <ol className="space-y-2 font-['Inter'] text-sm">
             <li className="flex gap-3">
@@ -91,21 +64,6 @@ export default function PaywallDemo() {
       </div>
 
       {/* Modals */}
-      <PaywallModal
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        onUpgrade={handleUpgrade}
-        onContinueFree={handleContinueFree}
-      />
-
-      <CheckoutModal
-        isOpen={showCheckout}
-        onClose={() => setShowCheckout(false)}
-        onSuccess={handleCheckoutSuccess}
-        onBack={handleCheckoutBack}
-        plan={selectedPlan}
-        userEmail="demo@example.com"
-      />
     </div>
   );
 }

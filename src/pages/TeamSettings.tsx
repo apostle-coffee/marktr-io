@@ -1,7 +1,5 @@
-"use client";
-
 import { useState } from "react";
-import { ArrowLeft, Plus, MoreVertical, Mail, UserCheck, UserX } from "lucide-react";
+import { ArrowLeft, Plus, MoreVertical, Mail, UserCheck } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Link } from "react-router-dom";
@@ -140,7 +138,7 @@ export default function TeamSettings() {
         </div>
 
         {/* Plan Overview Card */}
-        <div className="bg-button-green/20 rounded-[10px] border border-black p-6 mb-8">
+        <div className="bg-button-green/20 rounded-design border border-black p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -181,7 +179,7 @@ export default function TeamSettings() {
           {roleDescriptions.map((item, index) => (
             <div
               key={index}
-              className={`${item.color} rounded-[10px] border border-black p-5`}
+              className={`${item.color} rounded-design border border-black p-5`}
             >
               <h3 className="font-['Fraunces'] text-lg mb-3">{item.role}</h3>
               <ul className="space-y-2">
@@ -197,7 +195,7 @@ export default function TeamSettings() {
         </div>
 
         {/* Team Members List */}
-        <div className="bg-background rounded-[10px] border border-black overflow-hidden">
+        <div className="bg-background rounded-design border border-black overflow-hidden">
           <div className="border-b border-warm-grey p-4 bg-accent-grey/30">
             <h2 className="font-['Fraunces'] text-xl">Team Members</h2>
           </div>
@@ -365,7 +363,7 @@ export default function TeamSettings() {
 
       {/* Invite Team Member Modal */}
       <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="bg-[#96CBB6] border-black rounded-[10px] sm:max-w-md">
+        <DialogContent className="bg-[#96CBB6] border-black rounded-design sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-['Fraunces'] text-2xl">
               Invite Team Member
@@ -388,7 +386,7 @@ export default function TeamSettings() {
                   placeholder="colleague@company.com"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  className="font-['Inter'] border-black rounded-[10px]"
+                  className="font-['Inter'] border-black rounded-design"
                 />
               </div>
 
@@ -397,7 +395,7 @@ export default function TeamSettings() {
                   Role
                 </label>
                 <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
-                  <SelectTrigger className="font-['Inter'] border-black rounded-[10px]">
+                  <SelectTrigger className="font-['Inter'] border-black rounded-design">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -427,7 +425,7 @@ export default function TeamSettings() {
             </div>
           ) : (
             <div className="space-y-4 mt-4">
-              <div className="bg-[#FFD336]/20 rounded-[10px] border border-black p-4">
+              <div className="bg-[#FFD336]/20 rounded-design border border-black p-4">
                 <p className="font-['Inter'] text-sm text-foreground/80">
                   You're using all {totalSeats} seats. Upgrade to add more team members.
                 </p>
@@ -451,7 +449,7 @@ export default function TeamSettings() {
 
       {/* Remove Member Modal */}
       <Dialog open={showRemoveModal} onOpenChange={setShowRemoveModal}>
-        <DialogContent className="bg-[#FFD336] border-black rounded-[10px] sm:max-w-md">
+        <DialogContent className="bg-[#FFD336] border-black rounded-design sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-['Fraunces'] text-2xl">
               Remove team member?

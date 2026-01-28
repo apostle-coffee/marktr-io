@@ -1,5 +1,3 @@
-"use client";
-
 interface SelectChipProps {
   label: string;
   selected: boolean;
@@ -11,7 +9,7 @@ export function SelectChip({ label, selected, onClick }: SelectChipProps) {
     <button
       onClick={onClick}
       className={`
-        px-5 py-3 rounded-[10px] border-[1px] border-black
+        px-5 py-3 rounded-design border border-black
         transition-all duration-200
         ${selected 
           ? 'bg-button-green text-text-dark shadow-md scale-105' 

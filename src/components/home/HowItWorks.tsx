@@ -1,5 +1,3 @@
-"use client";
-
 import svgPaths from "@/imports/svg-xdnrzdurle";
 
 export function HowItWorks() {
@@ -78,7 +76,7 @@ export function HowItWorks() {
               </div>
 
               {/* Card Container */}
-              <div className="bg-transparent border border-black rounded-[10px] p-6 pt-16 text-center group hover:shadow-lg transition-all">
+              <div className="bg-transparent border border-black rounded-design p-6 pt-16 text-center group hover:shadow-lg transition-all">
                 <h3 className="mb-4 font-['Fraunces'] font-bold text-xl">{step.title}</h3>
                 <div className="text-foreground/80 font-['Inter'] text-left">
                   <p className="mb-3">{step.intro}</p>

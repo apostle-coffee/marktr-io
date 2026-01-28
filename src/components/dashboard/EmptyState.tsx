@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "../ui/button";
 import { Plus, Sparkles } from "lucide-react";
 
@@ -29,7 +27,7 @@ export function EmptyState({ type, onCreateNew, onUpgrade }: EmptyStateProps) {
 
           <Button
             onClick={onCreateNew}
-            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg flex items-center gap-2 mx-auto"
+            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg flex items-center gap-2 mx-auto"
           >
             <Plus className="w-5 h-5" />
             Generate New ICP
@@ -53,7 +51,7 @@ export function EmptyState({ type, onCreateNew, onUpgrade }: EmptyStateProps) {
           {[1, 2, 3].map((i) => (
             <div 
               key={i}
-              className="bg-accent-grey/50 border border-black rounded-[10px] h-48"
+              className="bg-accent-grey/50 border border-black rounded-design h-48"
             />
           ))}
         </div>
@@ -68,7 +66,7 @@ export function EmptyState({ type, onCreateNew, onUpgrade }: EmptyStateProps) {
 
         <Button
           onClick={onUpgrade}
-          className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg mx-auto"
+          className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg mx-auto"
         >
           Upgrade to unlock unlimited ICPs
         </Button>

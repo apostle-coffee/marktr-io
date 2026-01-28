@@ -24,7 +24,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         // Link variant
         "underline-offset-4 hover:underline": variant === "link",
         // CTA variant - matches current Hero/ClosingCTA styling exactly
-        "rounded-[10px] bg-button-green text-text-dark transition-transform scale-[1.50] hover:scale-[1.55] active:scale-[1.05] hover:bg-button-green/90 hover:shadow-lg whitespace-nowrap font-bold font-['Fraunces']": variant === "cta",
+        "rounded-design border border-black bg-button-green text-text-dark transition-transform scale-[1.50] hover:scale-[1.55] active:scale-[1.05] hover:bg-button-green/90 hover:shadow-lg whitespace-nowrap font-bold font-['Fraunces'] px-4 py-2": variant === "cta",
         // Sizes
         "h-10 px-4 py-2": size === "default" && variant !== "cta",
         "h-9 px-3": size === "sm" && variant !== "cta",

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -30,12 +28,12 @@ export function NewsletterSignup() {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 border-black rounded-[10px] font-['Inter']"
+              className="flex-1 border-black rounded-design font-['Inter']"
               required
             />
             <Button
               type="submit"
-              className="bg-button-green text-text-dark hover:bg-button-green/90 border border-black rounded-[10px] font-['Fraunces'] font-bold whitespace-nowrap"
+              className="bg-button-green text-text-dark hover:bg-button-green/90 border border-black rounded-design font-['Fraunces'] font-bold whitespace-nowrap"
             >
               Subscribe
             </Button>

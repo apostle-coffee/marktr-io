@@ -1,7 +1,3 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 
 interface ProductOrServiceScreenProps {
@@ -11,7 +7,7 @@ interface ProductOrServiceScreenProps {
   onBack: () => void;
 }
 
-export function ProductOrServiceScreen({ value, onChange, onContinue, onBack }: ProductOrServiceScreenProps) {
+export function ProductOrServiceScreen({ value, onChange, onContinue }: ProductOrServiceScreenProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && value.trim()) {
       onContinue();
@@ -21,10 +17,10 @@ export function ProductOrServiceScreen({ value, onChange, onContinue, onBack }: 
   return (
     <div className="space-y-6 animate-fade-in-up">
       <h1 className="font-['Fraunces'] font-bold text-4xl">
-        What product or service should we use to build your ICP?
+        What’s the main product or service you want to sell right now?
       </h1>
       <p className="text-foreground/70 max-w-md">
-        You can change this later.
+        Pick one offer for now — you can generate more ICPs later.
       </p>
       
       <div className="space-y-4 pt-4">
@@ -33,8 +29,8 @@ export function ProductOrServiceScreen({ value, onChange, onContinue, onBack }: 
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="e.g., Marketing software, Handmade jewelry, Design services"
-          className="border-[1px] border-black rounded-[10px] px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
+          placeholder="e.g., Dog grooming, Marketing consultancy, Organic coffee subscription"
+          className="border border-black rounded-design px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
           autoFocus
         />
       </div>

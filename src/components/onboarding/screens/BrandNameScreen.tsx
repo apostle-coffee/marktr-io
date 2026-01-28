@@ -1,7 +1,3 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 
 interface BrandNameScreenProps {
@@ -11,7 +7,7 @@ interface BrandNameScreenProps {
   onBack: () => void;
 }
 
-export function BrandNameScreen({ value, onChange, onContinue, onBack }: BrandNameScreenProps) {
+export function BrandNameScreen({ value, onChange, onContinue }: BrandNameScreenProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && value.trim()) {
       onContinue();
@@ -34,7 +30,7 @@ export function BrandNameScreen({ value, onChange, onContinue, onBack }: BrandNa
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Enter your business name"
-          className="border-[1px] border-black rounded-[10px] px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
+          className="border border-black rounded-design px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
           autoFocus
         />
       </div>

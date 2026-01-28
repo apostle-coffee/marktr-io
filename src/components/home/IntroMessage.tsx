@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { getProfileImage } from "@/config/profileImages";
 import svgPaths from "@/imports/svg-rk8otprxv2";
@@ -99,7 +97,7 @@ export function IntroMessage() {
               </div>
 
               {/* Testimonial Container */}
-              <div className="bg-transparent border border-black rounded-[10px] p-8 pt-20 text-center">
+              <div className="bg-transparent border border-black rounded-design p-8 pt-20 text-center">
                 <h3 className="font-['Fraunces'] font-bold mb-4 text-[24px]">Charlotte</h3>
                 <p className="font-['Inter'] text-foreground/80 mb-4 text-[20px] min-h-[120px]">
                   {displayedText}

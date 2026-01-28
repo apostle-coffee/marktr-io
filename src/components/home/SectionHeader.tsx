@@ -1,5 +1,3 @@
-"use client";
-
 interface SectionHeaderProps {
   title: string;
   subtitle?: string;

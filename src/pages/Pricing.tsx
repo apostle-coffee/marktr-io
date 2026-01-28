@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Check, Lock, Star, RotateCcw, Heart } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -11,12 +9,12 @@ export default function Pricing() {
 
   const prices = {
     monthly: {
-      GBP: 39,
-      USD: 49,
+      GBP: 30,
+      USD: 39,
     },
     yearly: {
-      GBP: 29,
-      USD: 37,
+      GBP: 25,
+      USD: 30,
     },
   };
 
@@ -67,7 +65,7 @@ export default function Pricing() {
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col items-center gap-3">
             {/* Currency Toggle */}
-            <div className="inline-flex rounded-[10px] border border-warm-grey p-0.5 bg-background mb-2">
+            <div className="inline-flex rounded-design border border-warm-grey p-0.5 bg-background mb-2">
               <button
                 onClick={() => setCurrency("GBP")}
                 className={`font-['Inter'] text-xs px-4 py-1.5 rounded-[8px] transition-all ${
@@ -91,7 +89,7 @@ export default function Pricing() {
             </div>
 
             {/* Plan Period Toggle */}
-            <div className="inline-flex rounded-[10px] border-2 border-warm-grey p-1 bg-background">
+            <div className="inline-flex rounded-design border-2 border-warm-grey p-1 bg-background">
               <button
                 onClick={() => setIsYearly(false)}
                 className={`font-['Inter'] text-sm px-6 py-2 rounded-[8px] transition-all ${
@@ -112,7 +110,7 @@ export default function Pricing() {
               >
                 Yearly
                 <span className="text-xs bg-[#FFD336] text-text-dark px-2 py-0.5 rounded-full border border-black">
-                  Save 25%
+                  2 months free
                 </span>
               </button>
             </div>
@@ -130,7 +128,7 @@ export default function Pricing() {
             {/* Monthly Plan */}
             <div
               onClick={() => setIsYearly(false)}
-              className={`relative bg-background rounded-[10px] p-8 flex flex-col transition-all cursor-pointer ${
+              className={`relative bg-background rounded-design p-8 flex flex-col transition-all cursor-pointer ${
                 !isYearly
                   ? "border-2 border-button-green shadow-lg md:scale-105 hover:shadow-xl"
                   : "border border-warm-grey hover:shadow-lg"
@@ -210,7 +208,7 @@ export default function Pricing() {
             {/* Yearly Plan - Highlighted */}
             <div
               onClick={() => setIsYearly(true)}
-              className={`relative bg-background rounded-[10px] p-8 flex flex-col transition-all cursor-pointer ${
+              className={`relative bg-background rounded-design p-8 flex flex-col transition-all cursor-pointer ${
                 isYearly
                   ? "border-2 border-button-green shadow-lg md:scale-105 hover:shadow-xl"
                   : "border border-warm-grey hover:shadow-lg"
@@ -248,7 +246,7 @@ export default function Pricing() {
                   VAT may apply
                 </p>
                 <p className="font-['Inter'] text-sm text-foreground/70">
-                  Save 25% + exclusive perks
+                  2 months free + exclusive perks
                 </p>
               </div>
 
@@ -329,7 +327,7 @@ export default function Pricing() {
             Compare Plans
           </h2>
           
-          <div className="bg-background rounded-[10px] border border-black overflow-hidden">
+          <div className="bg-background rounded-design border border-black overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-warm-grey">
@@ -448,7 +446,7 @@ export default function Pricing() {
             {faqs.map((faq, index) => (
               <div
                 key={index}
-                className="bg-background rounded-[10px] border border-black p-6 transition-all hover:shadow-lg"
+                className="bg-background rounded-design border border-black p-6 transition-all hover:shadow-lg"
               >
                 <h3 className="font-['Fraunces'] text-lg mb-3">{faq.question}</h3>
                 <p className="font-['Inter'] text-sm text-foreground/70 leading-relaxed">

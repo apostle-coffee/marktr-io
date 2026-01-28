@@ -1,7 +1,3 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 
 interface NameScreenProps {
@@ -11,7 +7,7 @@ interface NameScreenProps {
   onBack: () => void;
 }
 
-export function NameScreen({ value, onChange, onContinue, onBack }: NameScreenProps) {
+export function NameScreen({ value, onChange, onContinue }: NameScreenProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && value.trim()) {
       onContinue();
@@ -34,7 +30,7 @@ export function NameScreen({ value, onChange, onContinue, onBack }: NameScreenPr
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Enter your name"
-          className="border-[1px] border-black rounded-[10px] px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
+          className="border border-black rounded-design px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
           autoFocus
         />
       </div>

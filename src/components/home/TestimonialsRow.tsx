@@ -1,5 +1,3 @@
-"use client";
-
 import { getProfileImage } from "@/config/profileImages";
 import svgPaths from "@/imports/svg-dy16vubapd";
 
@@ -9,7 +7,7 @@ interface Testimonial {
   company: string;
   quote: string;
   image: string;
-  circleColor: string;
+  color: string;
 }
 
 export function TestimonialsRow() {
@@ -20,7 +18,7 @@ export function TestimonialsRow() {
       company: "LexKin",
       quote: "ICP Generator is a wonderfully easy tool to use, with a clear and intuitive interface. The pricing is extremely competitive and the customer service second to none!",
       image: getProfileImage("ld1"),
-      circleColor: "#FFD336",
+      color: "#FFD336",
     },
     {
       name: "Adrian Taylor",
@@ -28,7 +26,7 @@ export function TestimonialsRow() {
       company: "Bullfinch Digital",
       quote: "We chose ICP Generator based on their highly competitive pricing and incredible interface. Not only that, their team gave 110% in helping craft the solution for our project.",
       image: getProfileImage("adrian"),
-      circleColor: "#FF9922",
+      color: "#FF9922",
     },
     {
       name: "Belinda Singh",
@@ -36,7 +34,7 @@ export function TestimonialsRow() {
       company: "AdBard",
       quote: "We've been working with ICP Generator for some time now. It's become the foundation of client onboarding and the creation of targeted marketing strategies.",
       image: getProfileImage("belinda"),
-      circleColor: "#96CBB6",
+      color: "#96CBB6",
     },
   ];
 
@@ -51,7 +49,7 @@ export function TestimonialsRow() {
                 <svg className="absolute inset-0 w-full h-full" viewBox="0 0 146 145" fill="none">
                   <path 
                     d={svgPaths.pef38d80} 
-                    fill={testimonial.circleColor} 
+                    fill={testimonial.color} 
                     stroke="black" 
                     strokeWidth="1"
                   />
@@ -64,7 +62,7 @@ export function TestimonialsRow() {
               </div>
 
               {/* Testimonial Container */}
-              <div className="bg-transparent border border-black rounded-[10px] p-6 pt-16 text-center h-full flex flex-col">
+              <div className="bg-transparent border border-black rounded-design p-6 pt-16 text-center h-full flex flex-col">
                 <h3 className="font-['Fraunces'] mb-2 text-[18px]">{testimonial.name}</h3>
                 <p className="font-['Inter'] text-foreground/80 mb-4 text-[15px] flex-grow">
                   "{testimonial.quote}"

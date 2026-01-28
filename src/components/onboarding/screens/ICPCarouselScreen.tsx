@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { Button } from "../../ui/button";
 import { ICPCard, ICPData } from "../ICPCard";
@@ -15,8 +13,11 @@ export function ICPCarouselScreen({ onUnlockAll, onEmailICP }: ICPCarouselScreen
   // Mock ICP data - this would come from the backend/AI generation
   const icpData: ICPData[] = [
     {
-      persona_name: "Sarah the Startup Founder",
-      bio: "Early-stage tech founder seeking product-market fit",
+      name: "Sarah the Startup Founder",
+      description: "Early-stage tech founder seeking product-market fit",
+      industry: "Tech / SaaS",
+      companySize: "1–10",
+      location: "London, UK",
       goals: [
         "Validate product-market fit quickly",
         "Build a scalable customer acquisition strategy",
@@ -27,43 +28,25 @@ export function ICPCarouselScreen({ onUnlockAll, onEmailICP }: ICPCarouselScreen
         "Wasting time on wrong customer segments",
         "Struggling to articulate value proposition clearly"
       ],
-      buying_triggers: [
-        "Fast implementation and results",
-        "Affordable pricing for early-stage companies",
-        "Proven case studies from similar startups"
+      budget: "Low (Bootstrapped / Pre-seed)",
+      decision_makers: ["Founder", "Co-founder"],
+      tech_stack: ["Notion", "Figma", "Linear", "Stripe"],
+      challenges: [
+        "Noise in the startup market",
+        "Weak brand awareness"
       ],
-      behaviours: [
-        "Active on LinkedIn and Twitter/X",
-        "Consumes startup podcasts and newsletters",
-        "Attends virtual networking events weekly"
+      opportunities: [
+        "Quick adoption from early-stage communities"
       ],
-      affinities: [
-        "Y Combinator, Product Hunt, Indie Hackers",
-        "Tools: Notion, Figma, Linear",
-        "Follows: Harry Stebbings, Lenny Rachitsky"
-      ],
-      messaging: [
-        "Speed and efficiency messaging",
-        "ROI-focused language",
-        "Founder-to-founder tone"
-      ],
-      conversion_drivers: [
-        "Free trial with immediate value",
-        "Transparent pricing",
-        "Community testimonials"
-      ],
-      content_pillars: [
-        "Product-market fit frameworks",
-        "Customer research best practices",
-        "Startup growth strategies"
-      ],
-      meta_lookalike: "Tech founders, 25-40, interested in SaaS, entrepreneurship, product management. Engaged with Y Combinator, Product Hunt, TechCrunch.",
       avatar: "https://images.unsplash.com/photo-1687575635557-a3f3ed535b56?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjcmVhdGl2ZSUyMHByb2Zlc3Npb25hbCUyMHdvbWFufGVufDF8fHx8MTc2MzMwMjY3NHww&ixlib=rb-4.1.0&q=80&w=1080",
-      circleColor: "#BBA0E5"
+      color: "#BBA0E5"
     },
     {
-      persona_name: "Marcus the Marketing Manager",
-      bio: "Growth-focused marketer at a scaling B2B company",
+      name: "Marcus the Marketing Manager",
+      description: "Growth-focused marketer at a scaling B2B company",
+      industry: "B2B SaaS",
+      companySize: "50–250",
+      location: "Manchester, UK",
       goals: [
         "Increase conversion rates across campaigns",
         "Better segment and target audiences",
@@ -74,17 +57,25 @@ export function ICPCarouselScreen({ onUnlockAll, onEmailICP }: ICPCarouselScreen
         "High CAC with low conversion",
         "Difficulty personalizing at scale"
       ],
-      buying_triggers: [
-        "Data-driven insights and analytics",
-        "Integration with existing marketing stack",
-        "Clear ROI metrics and reporting"
+      budget: "Medium (£10k–£50k monthly)",
+      decision_makers: ["Marketing Manager", "VP of Growth"],
+      tech_stack: ["HubSpot", "Marketo", "GA4", "Salesforce"],
+      challenges: [
+        "Fragmented customer insights"
+      ],
+      opportunities: [
+        "Strong email list",
+        "Scaling campaigns"
       ],
       avatar: "https://images.unsplash.com/photo-1762522921456-cdfe882d36c3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx5b3VuZyUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0fGVufDF8fHx8MTc2MzIxNTg2MHww&ixlib=rb-4.1.0&q=80&w=1080",
-      circleColor: "#FFD336"
+      color: "#FFD336"
     },
     {
-      persona_name: "Emma the E-commerce Owner",
-      bio: "Small business owner selling handmade products online",
+      name: "Emma the E-commerce Owner",
+      description: "Small business owner selling handmade products online",
+      industry: "E-commerce / Retail",
+      companySize: "1–5",
+      location: "Bristol, UK",
       goals: [
         "Grow online sales consistently",
         "Build a loyal customer community",
@@ -95,13 +86,17 @@ export function ICPCarouselScreen({ onUnlockAll, onEmailICP }: ICPCarouselScreen
         "Competing with bigger brands on budget",
         "Understanding customer preferences"
       ],
-      buying_triggers: [
-        "Easy-to-use tools (no tech skills needed)",
-        "Affordable monthly pricing",
-        "Visual results and actionable insights"
+      budget: "Low–medium (£2k–£8k monthly)",
+      decision_makers: ["Owner"],
+      tech_stack: ["Shopify", "Klaviyo", "Meta Ads Manager"],
+      challenges: [
+        "Small brand awareness"
+      ],
+      opportunities: [
+        "Strong niche audience"
       ],
       avatar: "https://images.unsplash.com/photo-1750535135645-005e250ff210?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmllbmRseSUyMGNhcnRvb24lMjBhdmF0YXJ8ZW58MXx8fHwxNzYzMzAyNjc0fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      circleColor: "#FF9922"
+      color: "#FF9922"
     }
   ];
 
@@ -220,12 +215,12 @@ export function ICPCarouselScreen({ onUnlockAll, onEmailICP }: ICPCarouselScreen
         <div className="text-center animate-fade-in-up delay-200 mt-16">
           <Button
             onClick={onUnlockAll}
-            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+            className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
           >
-            Unlock All 3 ICPs
+            Unlock the full ICP Generator
           </Button>
           <p className="font-['Inter'] text-sm text-foreground/60 mt-4">
-            Get complete insights for all three customer personas
+            Unlock unlimited brands and collections, full customer intelligence, content strategy, exports, and collaboration tools.
           </p>
         </div>
       </div>

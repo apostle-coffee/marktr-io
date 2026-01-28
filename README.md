@@ -2,6 +2,26 @@
 
 AI-powered Ideal Customer Profile generation for your business.
 
+## Deploying to Vercel
+
+- **Build command:** `npm run build`
+- **Output directory:** `dist`
+- **SPA routing:** `vercel.json` rewrites all routes to `/` so React Router deep links work.
+
+**Frontend environment variables (Vite):**
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+- `VITE_STRIPE_PRICE_MONTHLY`
+- `VITE_STRIPE_PRICE_ANNUAL`
+- `VITE_TURNSTILE_SITE_KEY` (if used)
+- `VITE_AI_MOCK` (if used)
+- `VITE_BYPASS_PAYWALL` (if used)
+- `VITE_OPENAI_API_KEY` (note: should not be exposed client-side; planned to move server-side later)
+
+**Supabase Auth:** set **Site URL** to `https://icpgenerator.io` and allow redirect URL `https://icpgenerator.io/auth/callback` (and optionally `https://icpgenerator.io/*` during development).
+
+
 ## Tech Stack
 
 - **React 18** + **TypeScript**

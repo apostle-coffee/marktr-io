@@ -1,25 +1,23 @@
-"use client";
-
 import { Lock } from "lucide-react";
 import { Button } from "../ui/button";
 import { ImageWithFallback } from "../figma/ImageWithFallback";
 import svgPaths from "../../imports/svg-dy16vubapd";
 
 export interface ICPData {
-  persona_name: string;
-  age_range?: string;
-  bio: string;
+  name: string;
+  description: string;
+  industry?: string;
+  companySize?: string;
+  location?: string;
   goals: string[];
   pain_points: string[];
-  buying_triggers: string[];
-  behaviours?: string[];
-  affinities?: string[];
-  messaging?: string[];
-  conversion_drivers?: string[];
-  content_pillars?: string[];
-  meta_lookalike?: string;
+  budget?: string;
+  decision_makers?: string[];
+  tech_stack?: string[];
+  challenges?: string[];
+  opportunities?: string[];
   avatar: string;
-  circleColor: string;
+  color: string;
 }
 
 interface ICPCardProps {
@@ -28,20 +26,17 @@ interface ICPCardProps {
   onUnlock?: () => void;
   cardNumber?: number;
   onEmailICP?: () => void;
+  ctaLabel?: string;
 }
 
-export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailICP }: ICPCardProps) {
-  const LockedSection = ({ title }: { title: string }) => (
-    <div className="relative">
-      <div className="select-none pointer-events-none opacity-40">
-        <h3 className="font-['Fraunces'] mb-3">{title}</h3>
-        <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-          <li>• Sample placeholder text here</li>
-          <li>• Additional content appears here</li>
-        </ul>
-      </div>
-    </div>
-  );
+export function ICPCard({
+  data,
+  isLocked = false,
+  onUnlock,
+  cardNumber,
+  onEmailICP,
+  ctaLabel,
+}: ICPCardProps) {
 
   return (
     <div className="relative w-full max-w-md mx-auto opacity-0 animate-fade-in-up">
@@ -51,7 +46,7 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
           className={`absolute -top-4 w-12 h-12 text-background rounded-full flex items-center justify-center border-2 border-black z-20 shadow-md ${
             cardNumber === 1 ? 'left-2 sm:-left-4' : 'right-2 sm:-right-4'
           }`}
-          style={{ backgroundColor: data.circleColor }}
+          style={{ backgroundColor: data.color }}
         >
           <span className="font-['Fraunces'] text-xl text-black">{cardNumber}</span>
         </div>
@@ -62,27 +57,27 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 146 145" fill="none">
           <path 
             d={svgPaths.pef38d80} 
-            fill={data.circleColor} 
+            fill={data.color} 
             stroke="black" 
             strokeWidth="1"
           />
         </svg>
         <ImageWithFallback 
           src={data.avatar} 
-          alt={data.persona_name} 
+          alt={data.name} 
           className="absolute inset-0 w-full h-full object-cover rounded-full p-1.5"
         />
       </div>
 
       {/* Card Container */}
-      <div className="bg-background border border-black rounded-[10px] p-6 pt-16 shadow-lg">
+      <div className="bg-background border border-black rounded-design p-6 pt-16 shadow-lg">
         {/* Header */}
         <div className="text-center mb-6 pb-6 border-b border-warm-grey">
-          <h2 className="font-['Fraunces'] mb-2">{data.persona_name}</h2>
-          {data.age_range && (
-            <p className="font-['Inter'] text-sm text-foreground/60 mb-2">{data.age_range}</p>
+          <h2 className="font-['Fraunces'] mb-2">{data.name}</h2>
+          {data.industry && (
+            <p className="font-['Inter'] text-sm text-foreground/60 mb-2">{data.industry}</p>
           )}
-          <p className="font-['Inter'] text-[15px] text-foreground/70 italic">{data.bio}</p>
+          <p className="font-['Inter'] text-[15px] text-foreground/70 italic">{data.description}</p>
         </div>
 
         {/* Free Sections */}
@@ -110,15 +105,25 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
                 </ul>
               </div>
 
-              {/* Buying Triggers */}
-              <div>
-                <h3 className="font-['Fraunces'] mb-3">Buying Triggers</h3>
-                <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                  {data.buying_triggers.map((trigger, index) => (
-                    <li key={index}>• {trigger}</li>
-                  ))}
-                </ul>
-              </div>
+              {/* Decision Makers */}
+              {data.decision_makers && data.decision_makers.length > 0 && (
+                <div>
+                  <h3 className="font-['Fraunces'] mb-3">Decision Makers</h3>
+                  <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
+                    {data.decision_makers.map((maker, index) => (
+                      <li key={index}>• {maker}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Budget */}
+              {data.budget && (
+                <div>
+                  <h3 className="font-['Fraunces'] mb-3">Budget</h3>
+                  <p className="font-['Inter'] text-[15px] text-foreground/80">{data.budget}</p>
+                </div>
+              )}
 
               {/* Email ICP CTA - Above the divider for first card */}
               {onEmailICP && cardNumber === 1 && (
@@ -126,9 +131,9 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
                   <Button
                     onClick={onEmailICP}
                     variant="outline"
-                    className="w-full bg-transparent text-foreground border border-black rounded-[10px] py-6 transition-all hover:scale-[1.02] hover:bg-accent-grey/20"
+                    className="w-full bg-transparent text-foreground border border-black rounded-design py-6 transition-all hover:scale-[1.02] hover:bg-accent-grey/20"
                   >
-                    Email me this ICP
+                    {ctaLabel || "Email me this ICP"}
                   </Button>
                 </div>
               )}
@@ -146,7 +151,7 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
                 <div className="pb-6">
                   <Button
                     onClick={onUnlock}
-                    className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] py-6 transition-all hover:scale-[1.02] hover:shadow-md flex items-center justify-center gap-2"
+                    className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design py-6 transition-all hover:scale-[1.02] hover:shadow-md flex items-center justify-center gap-2"
                   >
                     <Lock className="w-4 h-4" />
                     Unlock Full ICP
@@ -176,13 +181,11 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
                   </ul>
                 </div>
 
-                {/* Buying Triggers */}
+                {/* Decision Makers */}
                 <div>
-                  <h3 className="font-['Fraunces'] mb-3">Buying Triggers</h3>
+                  <h3 className="font-['Fraunces'] mb-3">Decision Makers</h3>
                   <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                    {data.buying_triggers.map((trigger, index) => (
-                      <li key={index}>• {trigger}</li>
-                    ))}
+                    <li>• Decision makers and stakeholders</li>
                   </ul>
                 </div>
 
@@ -220,39 +223,40 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
           {/* Unlocked sections for card 1 */}
           {!isLocked && (
             <>
-              {/* Unlocked Sections - Show headlines clearly, blur content */}
-              {data.behaviours && (
+              {/* Digital Tools & Platforms */}
+              {data.tech_stack && data.tech_stack.length > 0 && (
                 <div>
-                  <h3 className="font-['Fraunces'] mb-3">Behaviour & Online Habits</h3>
+                  <h3 className="font-['Fraunces'] mb-3">Digital Tools & Platforms</h3>
                   <div className="blur-sm select-none pointer-events-none">
                     <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                      {data.behaviours.map((behaviour, index) => (
-                        <li key={index}>• {behaviour}</li>
+                      {data.tech_stack.map((tech, index) => (
+                        <li key={index}>• {tech}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
               )}
 
-              {data.affinities && (
+              {/* Challenges */}
+              {data.challenges && data.challenges.length > 0 && (
                 <div>
-                  <h3 className="font-['Fraunces'] mb-3">Brand Affinities</h3>
+                  <h3 className="font-['Fraunces'] mb-3">Challenges</h3>
                   <div className="blur-sm select-none pointer-events-none">
                     <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                      {data.affinities.map((affinity, index) => (
-                        <li key={index}>• {affinity}</li>
+                      {data.challenges.map((challenge, index) => (
+                        <li key={index}>• {challenge}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
               )}
 
-              {/* Unlock Full ICP CTA - After Brand Affinities */}
+              {/* Unlock Full ICP CTA */}
               {onUnlock && cardNumber === 1 && (
                 <div className="pt-2">
                   <Button
                     onClick={onUnlock}
-                    className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-[10px] py-6 transition-all hover:scale-[1.02] hover:shadow-md flex items-center justify-center gap-2"
+                    className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design py-6 transition-all hover:scale-[1.02] hover:shadow-md flex items-center justify-center gap-2"
                   >
                     <Lock className="w-4 h-4" />
                     Unlock Full ICP
@@ -260,50 +264,16 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
                 </div>
               )}
 
-              {data.messaging && (
+              {/* Opportunities */}
+              {data.opportunities && data.opportunities.length > 0 && (
                 <div>
-                  <h3 className="font-['Fraunces'] mb-3">Messaging That Resonates</h3>
+                  <h3 className="font-['Fraunces'] mb-3">Opportunities</h3>
                   <div className="blur-sm select-none pointer-events-none">
                     <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                      {data.messaging.map((message, index) => (
-                        <li key={index}>• {message}</li>
+                      {data.opportunities.map((opportunity, index) => (
+                        <li key={index}>• {opportunity}</li>
                       ))}
                     </ul>
-                  </div>
-                </div>
-              )}
-
-              {data.conversion_drivers && (
-                <div>
-                  <h3 className="font-['Fraunces'] mb-3">What Converts Them</h3>
-                  <div className="blur-sm select-none pointer-events-none">
-                    <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                      {data.conversion_drivers.map((driver, index) => (
-                        <li key={index}>• {driver}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {data.content_pillars && (
-                <div>
-                  <h3 className="font-['Fraunces'] mb-3">Content Pillars</h3>
-                  <div className="blur-sm select-none pointer-events-none">
-                    <ul className="space-y-2 font-['Inter'] text-[15px] text-foreground/80">
-                      {data.content_pillars.map((pillar, index) => (
-                        <li key={index}>• {pillar}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {data.meta_lookalike && (
-                <div>
-                  <h3 className="font-['Fraunces'] mb-3">Meta Lookalike Audience</h3>
-                  <div className="blur-sm select-none pointer-events-none">
-                    <p className="font-['Inter'] text-[15px] text-foreground/80">{data.meta_lookalike}</p>
                   </div>
                 </div>
               )}
@@ -314,4 +284,3 @@ export function ICPCard({ data, isLocked = false, onUnlock, cardNumber, onEmailI
     </div>
   );
 }
-

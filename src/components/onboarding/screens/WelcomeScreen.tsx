@@ -1,13 +1,8 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
-
 interface WelcomeScreenProps {
   onContinue: () => void;
 }
 
-export function WelcomeScreen({ onContinue }: WelcomeScreenProps) {
+export function WelcomeScreen({}: WelcomeScreenProps) {
   return (
     <div className="space-y-6 animate-fade-in-up">
       <h1 className="font-['Fraunces'] font-bold text-4xl">

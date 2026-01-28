@@ -1,39 +1,71 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
+import { useEffect } from "react";
 import { SelectChip } from "../SelectChip";
 import { Input } from "../../ui/input";
 
 interface AssumedAudienceScreenProps {
   value: string[];
   customAudience: string;
+  businessType: "B2B" | "B2C" | "Both";
   onChange: (value: string[]) => void;
   onCustomAudienceChange: (value: string) => void;
+  onBusinessTypeChange: (value: "B2B" | "B2C" | "Both") => void;
   onContinue: () => void;
   onBack: () => void;
 }
 
-const audienceOptions = [
-  "Founders",
-  "Creators",
-  "SMB owners",
-  "Parents",
-  "Students",
-  "Professionals",
-  "Freelancers",
-  "Agencies",
-  "E-commerce",
-  "Not sure"
-];
+const audienceOptionsByType: Record<AssumedAudienceScreenProps["businessType"], string[]> = {
+  B2C: [
+    "Consumers",
+    "Parents",
+    "Students",
+    "Young professionals",
+    "Hobbyists / enthusiasts",
+    "Creators",
+    "Local customers",
+    "Online shoppers",
+    "Not sure",
+  ],
+  B2B: [
+    "Founders / Owners",
+    "SMB owners",
+    "Marketing managers",
+    "Operations managers",
+    "Agencies",
+    "Consultants",
+    "In-house teams",
+    "Procurement / buyers",
+    "Not sure",
+  ],
+  Both: [
+    "Founders",
+    "Creators",
+    "Freelancers",
+    "SMB owners",
+    "Online sellers",
+    "Professionals",
+    "Not sure",
+  ],
+};
 
 export function AssumedAudienceScreen({ 
   value, 
   customAudience,
+  businessType,
   onChange, 
   onCustomAudienceChange,
-  onContinue, 
-  onBack 
+  onBusinessTypeChange,
+  onContinue
 }: AssumedAudienceScreenProps) {
+  const options = audienceOptionsByType[businessType];
+
+  // Drop any selections that are no longer valid when businessType changes.
+  useEffect(() => {
+    const filtered = value.filter((v) => options.includes(v));
+    if (filtered.length !== value.length) {
+      onChange(filtered);
+    }
+  }, [businessType, options, onChange, value]);
+
   const toggleOption = (option: string) => {
     if (value.includes(option)) {
       onChange(value.filter(v => v !== option));
@@ -54,12 +86,28 @@ export function AssumedAudienceScreen({
         Who do you think your customer is today?
       </h1>
       <p className="text-foreground/70 max-w-md">
-        We'll refine and validate this for you.
+        We’ll tailor this based on whether you sell to consumers, businesses, or both.
       </p>
       
       <div className="pt-4 space-y-6">
+        <div className="space-y-2">
+          <label className="text-sm text-foreground/70">
+            Business type (helps tailor targeting + messaging):
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {(["B2C", "B2B", "Both"] as const).map((t) => (
+              <SelectChip
+                key={t}
+                label={t}
+                selected={businessType === t}
+                onClick={() => onBusinessTypeChange(t)}
+              />
+            ))}
+          </div>
+        </div>
+
         <div className="flex flex-wrap gap-3">
-          {audienceOptions.map((option) => (
+          {options.map((option) => (
             <SelectChip
               key={option}
               label={option}
@@ -78,8 +126,8 @@ export function AssumedAudienceScreen({
             value={customAudience}
             onChange={(e) => onCustomAudienceChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="e.g., Tech-savvy millennials, Small business accountants"
-            className="border-[1px] border-black rounded-[10px] px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
+            placeholder="e.g., Busy café owners, Fitness coaches, Boutique e-commerce brands"
+            className="border border-black rounded-design px-4 py-6 bg-white text-foreground placeholder:text-foreground/40"
           />
         </div>
       </div>

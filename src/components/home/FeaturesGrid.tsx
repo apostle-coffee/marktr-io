@@ -1,6 +1,4 @@
-"use client";
-
-import { FeatureCard } from "./FeatureCard";
+import { FeatureCard } from "../cards/FeatureCard";
 // Placeholder screenshot - replace with actual image
 const exampleScreenshot = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop";
 
@@ -78,7 +76,6 @@ export function FeaturesGrid() {
               title={feature.title}
               description={feature.description}
               isLocked={feature.isLocked}
-              badge={feature.badge}
               delay={index * 0.1}
               screenshot={feature.screenshot}
             />

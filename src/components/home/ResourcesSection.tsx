@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowRight } from "lucide-react";
 import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
 
@@ -71,7 +69,7 @@ export function ResourcesSection() {
               <a
                 key={index}
                 href={resource.link}
-                className="group relative block p-6 sm:p-8 rounded-[10px] border border-black transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 animate-fade-in-up cursor-pointer"
+                className="group relative block p-6 sm:p-8 rounded-design border border-black transition-all duration-300 hover:scale-[1.02] hover:shadow-lg opacity-0 animate-fade-in-up cursor-pointer"
                 style={{
                   backgroundColor: resource.bgColor,
                   animationDelay: `${index * 0.1}s`,

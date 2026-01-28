@@ -1,5 +1,5 @@
 // Main sections
-export { Header } from "./Header";
+export { Header } from "./layout/Header";
 export { Hero } from "./home/Hero";
 export { Stats } from "./home/Stats";
 export { IntroMessage } from "./home/IntroMessage";
@@ -10,12 +10,11 @@ export { FeaturesGrid } from "./home/FeaturesGrid";
 export { HumanSupport } from "./home/HumanSupport";
 export { TestimonialsRow } from "./home/TestimonialsRow";
 export { ResourcesSection } from "./home/ResourcesSection";
-export { Footer } from "./Footer";
+export { Footer } from "./layout/Footer";
 
 // Reusable components
-export { FeatureCard } from "./home/FeatureCard";
+export { FeatureCard } from "./cards/FeatureCard";
 export { SectionHeader } from "./home/SectionHeader";
 export { NewsletterSignup } from "./home/NewsletterSignup";
-export { Avatar } from "./home/Avatar";
-export { BlurredLockCard } from "./home/BlurredLockCard";
+export { BlurredLockCard } from "./cards/BlurredLockCard";
 export { ScrollToTop } from "./home/ScrollToTop";

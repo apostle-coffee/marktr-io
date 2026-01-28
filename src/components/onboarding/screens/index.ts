@@ -5,7 +5,7 @@ export { BusinessDescriptionScreen } from "./BusinessDescriptionScreen";
 export { ProductOrServiceScreen } from "./ProductOrServiceScreen";
 export { AssumedAudienceScreen } from "./AssumedAudienceScreen";
 export { MarketingChannelsScreen } from "./MarketingChannelsScreen";
+export { GeographyCurrencyScreen } from "./GeographyCurrencyScreen";
 export { EmailCaptureScreen } from "./EmailCaptureScreen";
 export { LoadingScreen } from "./LoadingScreen";
 export { ICPCarouselScreen } from "./ICPCarouselScreen";
-

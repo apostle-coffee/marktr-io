@@ -1,4 +1,4 @@
-import DashboardSidebar from '../components/dashboard/DashboardSidebar'
+import { DashboardSidebar } from '../components/layout/DashboardSidebar'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -73,7 +73,10 @@ export default function Team() {
 
   return (
     <div className="flex min-h-screen">
-      <DashboardSidebar />
+      <DashboardSidebar
+        userTier="free"
+        onUpgrade={() => {}}
+      />
       <div className="flex-1 p-8 max-w-4xl">
         <h1 className="font-fraunces text-4xl font-bold text-text-dark mb-8">Team Settings</h1>
 
@@ -164,4 +167,3 @@ export default function Team() {
     </div>
   )
 }
-

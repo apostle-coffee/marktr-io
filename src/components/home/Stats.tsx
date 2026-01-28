@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 
 export function Stats() {
@@ -67,7 +65,7 @@ export function Stats() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="relative flex flex-col items-center justify-center text-center opacity-0 animate-fade-in-up bg-transparent border border-foreground rounded-[10px] p-8 min-h-[140px] max-w-[280px] mx-auto w-full"
+              className="relative flex flex-col items-center justify-center text-center opacity-0 animate-fade-in-up bg-transparent border border-foreground rounded-design p-8 min-h-[140px] max-w-[280px] mx-auto w-full"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div 

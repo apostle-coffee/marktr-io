@@ -1,7 +1,3 @@
-"use client";
-
-import { ImageWithFallback } from "../../figma/ImageWithFallback";
-import { Button } from "../../ui/button";
 import { Textarea } from "../../ui/textarea";
 
 interface BusinessDescriptionScreenProps {
@@ -11,7 +7,7 @@ interface BusinessDescriptionScreenProps {
   onBack: () => void;
 }
 
-export function BusinessDescriptionScreen({ value, onChange, onContinue, onBack }: BusinessDescriptionScreenProps) {
+export function BusinessDescriptionScreen({ value, onChange, onContinue }: BusinessDescriptionScreenProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && value.trim()) {
       e.preventDefault();
@@ -29,12 +25,16 @@ export function BusinessDescriptionScreen({ value, onChange, onContinue, onBack 
       </p>
       
       <div className="space-y-4 pt-4">
+        <div className="text-sm text-foreground/60 max-w-md space-y-1">
+          <p>Try: <span className="font-medium text-foreground/70">who you help</span> + <span className="font-medium text-foreground/70">the outcome</span> + <span className="font-medium text-foreground/70">what makes you different</span>.</p>
+          <p className="italic">Example: “We help busy founders get more leads using done-for-you Meta ads and landing pages.”</p>
+        </div>
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="We help..."
-          className="border-[1px] border-black rounded-[10px] px-4 py-4 bg-white text-foreground placeholder:text-foreground/40 min-h-[120px] resize-none"
+          placeholder="We help [who] achieve [outcome] by [how]..."
+          className="border border-black rounded-design px-4 py-4 bg-white text-foreground placeholder:text-foreground/40 min-h-[120px] resize-none"
           autoFocus
         />
       </div>
