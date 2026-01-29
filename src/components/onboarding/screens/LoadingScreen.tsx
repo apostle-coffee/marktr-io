@@ -42,6 +42,11 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const [jobDone, setJobDone] = useState(false);
+  const progressIntervalRef = useRef<number | null>(null);
+  const stageIntervalRef = useRef<number | null>(null);
+  const avatarIntervalRef = useRef<number | null>(null);
+  const completionTimeoutRef = useRef<number | null>(null);
+  const mountedRef = useRef(true);
 
   const avatarLibrary = getAllProfileImages();
   const avatars = avatarLibrary.length
@@ -49,8 +54,36 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
     : ["/images/profiles/ld1.png"];
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (progressIntervalRef.current !== null) {
+        window.clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      if (stageIntervalRef.current !== null) {
+        window.clearInterval(stageIntervalRef.current);
+        stageIntervalRef.current = null;
+      }
+      if (avatarIntervalRef.current !== null) {
+        window.clearInterval(avatarIntervalRef.current);
+        avatarIntervalRef.current = null;
+      }
+      if (completionTimeoutRef.current !== null) {
+        window.clearTimeout(completionTimeoutRef.current);
+        completionTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const hasJob = Boolean(run || runJob);
-    const progressInterval = window.setInterval(() => {
+    if (progressIntervalRef.current !== null) {
+      window.clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    progressIntervalRef.current = window.setInterval(() => {
+      if (!mountedRef.current) return;
       setProgress((prev) => {
         const cap = hasJob && !jobDone ? 90 : 100;
         if (prev >= cap) return prev;
@@ -58,61 +91,107 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
       });
     }, 80);
 
-    return () => window.clearInterval(progressInterval);
+    return () => {
+      if (progressIntervalRef.current !== null) {
+        window.clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
   }, [run, runJob, jobDone]);
 
   useEffect(() => {
-    const stageInterval = window.setInterval(() => {
+    if (stageIntervalRef.current !== null) {
+      window.clearInterval(stageIntervalRef.current);
+      stageIntervalRef.current = null;
+    }
+    stageIntervalRef.current = window.setInterval(() => {
+      if (!mountedRef.current) return;
       setCurrentStageIndex((prev) => {
-        if (prev >= loadingStages.length - 1) {
-          window.clearInterval(stageInterval);
-          return prev;
-        }
-        return prev + 1;
+        if (loadingStages.length <= 1) return 0;
+        return (prev + 1) % loadingStages.length;
       });
     }, 2000);
 
-    return () => window.clearInterval(stageInterval);
+    return () => {
+      if (stageIntervalRef.current !== null) {
+        window.clearInterval(stageIntervalRef.current);
+        stageIntervalRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
-    const avatarInterval = window.setInterval(() => {
+    if (avatarIntervalRef.current !== null) {
+      window.clearInterval(avatarIntervalRef.current);
+      avatarIntervalRef.current = null;
+    }
+    if (jobDone) return;
+    avatarIntervalRef.current = window.setInterval(() => {
+      if (!mountedRef.current) return;
       setCurrentAvatarIndex((prev) => {
-        if (prev >= avatars.length - 1) {
-          window.clearInterval(avatarInterval);
-          return prev;
-        }
-        return prev + 1;
+        if (avatars.length <= 1) return 0;
+        return (prev + 1) % avatars.length;
       });
     }, 1200);
 
-    return () => window.clearInterval(avatarInterval);
-  }, [avatars.length]);
+    return () => {
+      if (avatarIntervalRef.current !== null) {
+        window.clearInterval(avatarIntervalRef.current);
+        avatarIntervalRef.current = null;
+      }
+    };
+  }, [avatars.length, jobDone]);
 
   useEffect(() => {
     const job = run || runJob;
     if (!job || startedRef.current) return;
     startedRef.current = true;
+    let cancelled = false;
 
     const runOnce = async () => {
       try {
         await job();
+        if (cancelled || !mountedRef.current) return;
         setJobDone(true);
         setProgress(100);
+        if (avatarIntervalRef.current !== null) {
+          window.clearInterval(avatarIntervalRef.current);
+          avatarIntervalRef.current = null;
+        }
+        if (stageIntervalRef.current !== null) {
+          window.clearInterval(stageIntervalRef.current);
+          stageIntervalRef.current = null;
+        }
+        if (progressIntervalRef.current !== null) {
+          window.clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
       } catch (e: any) {
+        if (cancelled || !mountedRef.current) return;
         console.error("[LoadingScreen] run failed", e);
         setError(e?.message || "Something went wrong while generating your ICP.");
       }
     };
 
     runOnce();
+    return () => {
+      cancelled = true;
+    };
   }, [run, runJob]);
 
   useEffect(() => {
     const job = run || runJob;
     if (!job && progress >= 100 && onComplete) {
-      const t = window.setTimeout(onComplete, 500);
-      return () => window.clearTimeout(t);
+      if (completionTimeoutRef.current !== null) {
+        window.clearTimeout(completionTimeoutRef.current);
+      }
+      completionTimeoutRef.current = window.setTimeout(onComplete, 500);
+      return () => {
+        if (completionTimeoutRef.current !== null) {
+          window.clearTimeout(completionTimeoutRef.current);
+          completionTimeoutRef.current = null;
+        }
+      };
     }
     return undefined;
   }, [progress, onComplete, run, runJob]);
