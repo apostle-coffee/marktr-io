@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { DashboardSidebar } from "../components/layout/DashboardSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
 import { User, CreditCard, Bell, Shield, Loader2, AlertCircle } from "lucide-react";
 import useSubscription from "../hooks/useSubscription";
@@ -40,6 +50,10 @@ export default function Account() {
   const [emailMessage, setEmailMessage] = useState("");
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [isManagingBilling, setIsManagingBilling] = useState(false);
+  const [alreadySubscribed, setAlreadySubscribed] = useState<{
+    open: boolean;
+    portalUrl: string | null;
+  }>({ open: false, portalUrl: null });
 
   const stripePriceId = import.meta.env.VITE_STRIPE_PRICE_ID as string | undefined;
 
@@ -157,6 +171,13 @@ export default function Account() {
         }
       );
       if (error) throw error;
+      if (data?.code === "ALREADY_SUBSCRIBED") {
+        setAlreadySubscribed({
+          open: true,
+          portalUrl: (data as any)?.portalUrl ?? null,
+        });
+        return;
+      }
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -482,6 +503,67 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+        <AlertDialog
+          open={alreadySubscribed.open}
+          onOpenChange={(open) =>
+            setAlreadySubscribed((prev) => ({ ...prev, open }))
+          }
+        >
+          <AlertDialogContent className="rounded-design border border-black">
+            <AlertDialogHeader>
+              <AlertDialogTitle>You're already subscribed</AlertDialogTitle>
+              <AlertDialogDescription>
+                It looks like you already have a subscription set up. You can amend
+                it from your Account page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-black rounded-design"
+                  onClick={() => {
+                    setAlreadySubscribed({ open: false, portalUrl: null });
+                    window.location.assign("/account");
+                  }}
+                >
+                  Go to Account
+                </Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button
+                  type="button"
+                  className="bg-button-green hover:bg-button-green/90 text-text-dark border border-black rounded-design"
+                  onClick={async () => {
+                    const portalUrl = alreadySubscribed.portalUrl;
+                    setAlreadySubscribed({ open: false, portalUrl: null });
+                    if (portalUrl) {
+                      window.location.assign(portalUrl);
+                      return;
+                    }
+                    try {
+                      const origin = window.location.origin;
+                      const { data } = await supabase.functions.invoke(
+                        "create-portal-session",
+                        { body: { returnUrl: `${origin}/account` } }
+                      );
+                      if (data?.url) {
+                        window.location.assign(data.url);
+                        return;
+                      }
+                    } catch (err) {
+                      console.error("Account: portal session failed", err);
+                    }
+                    window.location.assign("/account");
+                  }}
+                >
+                  Manage Billing
+                </Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

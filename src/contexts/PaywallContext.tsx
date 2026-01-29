@@ -1,6 +1,17 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { PaywallModal } from "../components/modals/PaywallModal";
 import { supabase } from "../config/supabase";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "../components/ui/alert-dialog";
+import { Button } from "../components/ui/button";
 
 // IMPORTANT: internally we ONLY allow these two values.
 // (UI can say "Yearly", but the value must remain "annual".)
@@ -8,9 +19,14 @@ type Plan = "monthly" | "annual";
 
 type PaywallContextValue = {
   openPaywall: (plan?: Plan) => void;
-  startCheckout: (plan?: Plan) => Promise<void>;
+  startCheckout: (plan?: Plan, email?: string, force?: boolean) => Promise<void>;
   closePaywall: () => void;
   isStartingCheckout: boolean;
+};
+
+type AlreadySubscribedState = {
+  open: boolean;
+  portalUrl: string | null;
 };
 
 const PaywallContext = createContext<PaywallContextValue | undefined>(undefined);
@@ -19,6 +35,21 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan>("annual");
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [alreadySubscribed, setAlreadySubscribed] = useState<AlreadySubscribedState>({
+    open: false,
+    portalUrl: null,
+  });
+  const [emailAlreadySubscribed, setEmailAlreadySubscribed] = useState<{
+    open: boolean;
+    email: string | null;
+    portalUrl: string | null;
+    plan: Plan | null;
+  }>({
+    open: false,
+    email: null,
+    portalUrl: null,
+    plan: null,
+  });
 
   const openPaywall = useCallback((plan?: Plan) => {
     if (plan) setSelectedPlan(plan);
@@ -31,11 +62,26 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
   const normalisePlan = (p: any): Plan => (p === "yearly" ? "annual" : p);
 
   const startCheckout = useCallback(
-    async (plan?: Plan) => {
+    async (plan?: Plan, email?: string, force?: boolean) => {
       const nextPlan = normalisePlan(plan ?? selectedPlan);
 
       try {
         setIsStartingCheckout(true);
+        const {
+          data: { user: currentUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (!currentUser && !userError) {
+          const { error: anonError } = await supabase.auth.signInAnonymously();
+          if (anonError) throw anonError;
+
+          // Ensure the anon session is actually hydrated before calling edge functions
+          const { data: sess } = await supabase.auth.getSession();
+          if (!sess?.session?.access_token) {
+            throw new Error("Unable to start anonymous session. Please refresh and try again.");
+          }
+        }
         const monthlyPriceId = import.meta.env.VITE_STRIPE_PRICE_MONTHLY as
           | string
           | undefined;
@@ -66,6 +112,8 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
               priceId,
               successUrl: `${origin}/dashboard?checkout=success`,
               cancelUrl: `${origin}/dashboard?checkout=cancel`,
+              customerEmail: email?.trim(),
+              force: Boolean(force),
             },
           }
         );
@@ -93,6 +141,28 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
             (error as any)?.message ||
             "Unexpected error";
           throw new Error(msg);
+        }
+
+        if (data?.code === "ALREADY_SUBSCRIBED") {
+          setAlreadySubscribed({
+            open: true,
+            portalUrl: (data as any)?.portalUrl ?? null,
+          });
+          setShowPaywall(false);
+          setIsStartingCheckout(false);
+          return;
+        }
+
+        if (data?.code === "EMAIL_ALREADY_SUBSCRIBED") {
+          setEmailAlreadySubscribed({
+            open: true,
+            email: (data as any)?.email ?? null,
+            portalUrl: (data as any)?.portalUrl ?? null,
+            plan: nextPlan,
+          });
+          setShowPaywall(false);
+          setIsStartingCheckout(false);
+          return;
         }
 
         if (!data?.url) throw new Error("Checkout URL missing");
@@ -131,13 +201,184 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         isOpen={showPaywall}
         onClose={closePaywall}
         // Normalise in case PaywallModal passes "yearly"
-        onUpgrade={(plan) => startCheckout(normalisePlan(plan) as Plan)}
+        onUpgrade={(plan, email, force) =>
+          startCheckout(normalisePlan(plan) as Plan, email, force)
+        }
         onContinueFree={closePaywall}
         selectedPlan={selectedPlan}
         // Normalise in case PaywallModal passes "yearly"
         onSelectPlan={(plan) => setSelectedPlan(normalisePlan(plan))}
         isStartingCheckout={isStartingCheckout}
       />
+
+      <AlertDialog
+        open={alreadySubscribed.open}
+        onOpenChange={(open) =>
+          setAlreadySubscribed((prev) => ({ ...prev, open }))
+        }
+      >
+        <AlertDialogContent className="rounded-design border border-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle>You're already subscribed</AlertDialogTitle>
+            <AlertDialogDescription>
+              It looks like you already have a subscription set up. You can amend
+              it from your Account page.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-black rounded-design"
+                onClick={() => {
+                  setAlreadySubscribed({ open: false, portalUrl: null });
+                  window.location.assign("/account");
+                }}
+              >
+                Go to Account
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                className="bg-button-green hover:bg-button-green/90 text-text-dark border border-black rounded-design"
+                onClick={async () => {
+                  const portalUrl = alreadySubscribed.portalUrl;
+                  setAlreadySubscribed({ open: false, portalUrl: null });
+                  if (portalUrl) {
+                    window.location.assign(portalUrl);
+                    return;
+                  }
+                  try {
+                    const origin = window.location.origin;
+                    const { data } = await supabase.functions.invoke(
+                      "create-portal-session",
+                      { body: { returnUrl: `${origin}/account` } }
+                    );
+                    if (data?.url) {
+                      window.location.assign(data.url);
+                      return;
+                    }
+                  } catch (err) {
+                    console.error("[paywall] portal session failed", err);
+                  }
+                  window.location.assign("/account");
+                }}
+              >
+                Manage Billing
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={emailAlreadySubscribed.open}
+        onOpenChange={(open) =>
+          setEmailAlreadySubscribed((prev) => ({ ...prev, open }))
+        }
+      >
+        <AlertDialogContent className="rounded-design border border-black">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Email already has a subscription</AlertDialogTitle>
+            <AlertDialogDescription>
+              Looks like <strong>{emailAlreadySubscribed.email ?? "this email"}</strong> already has an active or trial subscription.
+              You can manage billing, or continue anyway if you really need a second subscription.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-black rounded-design"
+                onClick={() => {
+                  setEmailAlreadySubscribed({
+                    open: false,
+                    email: null,
+                    portalUrl: null,
+                    plan: null,
+                  });
+                  window.location.assign("/account");
+                }}
+              >
+                Go to Account
+              </Button>
+            </AlertDialogCancel>
+
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                className="bg-button-green hover:bg-button-green/90 text-text-dark border border-black rounded-design"
+                onClick={async () => {
+                  const portalUrl = emailAlreadySubscribed.portalUrl;
+                  if (portalUrl) {
+                    setEmailAlreadySubscribed({
+                      open: false,
+                      email: null,
+                      portalUrl: null,
+                      plan: null,
+                    });
+                    window.location.assign(portalUrl);
+                    return;
+                  }
+
+                  try {
+                    const origin = window.location.origin;
+                    const { data } = await supabase.functions.invoke(
+                      "create-portal-session",
+                      { body: { returnUrl: `${origin}/account` } }
+                    );
+                    if (data?.url) {
+                      setEmailAlreadySubscribed({
+                        open: false,
+                        email: null,
+                        portalUrl: null,
+                        plan: null,
+                      });
+                      window.location.assign(data.url);
+                      return;
+                    }
+                  } catch {}
+
+                  setEmailAlreadySubscribed({
+                    open: false,
+                    email: null,
+                    portalUrl: null,
+                    plan: null,
+                  });
+                  window.location.assign("/account");
+                }}
+              >
+                Manage Billing
+              </Button>
+            </AlertDialogAction>
+
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="border-black rounded-design"
+                onClick={async () => {
+                  const plan = emailAlreadySubscribed.plan ?? "annual";
+                  const email = emailAlreadySubscribed.email ?? "";
+                  setEmailAlreadySubscribed({
+                    open: false,
+                    email: null,
+                    portalUrl: null,
+                    plan: null,
+                  });
+                  await startCheckout(plan, email, true);
+                }}
+              >
+                Continue anyway
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PaywallContext.Provider>
   );
 }

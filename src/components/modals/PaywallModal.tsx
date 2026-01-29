@@ -5,7 +5,7 @@ import { X, Check } from "lucide-react";
 interface PaywallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpgrade: (plan: "monthly" | "annual") => void;
+  onUpgrade: (plan: "monthly" | "annual", email: string, force?: boolean) => void;
   onContinueFree: () => void;
   selectedPlan: "monthly" | "annual";
   onSelectPlan: (plan: "monthly" | "annual") => void;
@@ -24,6 +24,10 @@ export function PaywallModal({
   if (!isOpen) return null;
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
   const trialFeatures = [
     "All 3 ICPs unlocked",
@@ -48,7 +52,8 @@ export function PaywallModal({
 
   const handleConfirmStartTrial = () => {
     setShowExitConfirm(false);
-    onUpgrade(selectedPlan);
+    if (!isValidEmail(email)) return;
+    onUpgrade(selectedPlan, email.trim());
   };
 
   return (
@@ -168,6 +173,29 @@ export function PaywallModal({
           </div>
 
           {/* Trial Benefits */}
+          {/* Email (used to prevent accidental duplicate subscriptions) */}
+          <div className="mb-8">
+            <h3 className="font-['Fraunces'] text-xl mb-4">Where should we send your receipt?</h3>
+            <div className="bg-accent-grey/20 border border-warm-grey rounded-design p-4">
+              <label className="block font-['Inter'] text-xs text-foreground/70 mb-2">
+                Email address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-sm"
+                autoComplete="email"
+                inputMode="email"
+                required
+              />
+              <p className="mt-2 font-['Inter'] text-xs text-foreground/60">
+                We use this to check you haven’t already got an active subscription.
+              </p>
+            </div>
+          </div>
+
           <div className="mb-8">
             <h3 className="font-['Fraunces'] text-xl mb-4">What you’ll get during your trial</h3>
             <div className="bg-gradient-to-br from-button-green/10 to-[#BBA0E5]/10 border border-black rounded-design p-6">
@@ -187,8 +215,11 @@ export function PaywallModal({
           {/* CTAs */}
           <div className="space-y-4">
             <Button
-              onClick={() => onUpgrade(selectedPlan)}
-              disabled={isStartingCheckout}
+              onClick={() => {
+                if (!isValidEmail(email)) return;
+                onUpgrade(selectedPlan, email.trim());
+              }}
+              disabled={isStartingCheckout || !isValidEmail(email)}
               className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg font-['Inter']"
             >
               {isStartingCheckout ? (
@@ -265,6 +296,7 @@ export function PaywallModal({
             <div className="flex flex-col gap-3">
               <Button
                 onClick={handleConfirmStartTrial}
+                disabled={isStartingCheckout || !isValidEmail(email)}
                 className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design font-['Inter']"
               >
                 Start free trial

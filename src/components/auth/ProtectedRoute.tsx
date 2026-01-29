@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAuthModal } from "../../contexts/AuthModalContext";
 
@@ -9,19 +8,13 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
-  const location = useLocation();
   const { openLogin } = useAuthModal();
-  const params = new URLSearchParams(location.search);
-  const allowGuestCheckout =
-    location.pathname === "/dashboard" &&
-    params.get("checkout") === "success" &&
-    Boolean(params.get("guest_ref"));
 
   useEffect(() => {
-    if (!loading && !user && !allowGuestCheckout) {
+    if (!loading && !user) {
       openLogin();
     }
-  }, [allowGuestCheckout, loading, openLogin, user]);
+  }, [loading, openLogin, user]);
 
   if (loading) {
     console.log("ProtectedRoute: waiting for AuthContext…");
@@ -36,10 +29,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    if (allowGuestCheckout) {
-      return <>{children}</>;
-    }
-
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

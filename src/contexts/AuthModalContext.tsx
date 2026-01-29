@@ -9,7 +9,7 @@ type LoginPayload = {
 };
 
 type FinishPayload = {
-  guestRef: string;
+  guestRef?: string | null;
 };
 
 type AuthModalState =
@@ -19,7 +19,7 @@ type AuthModalState =
 
 type AuthModalContextValue = {
   openLogin: (payload?: LoginPayload) => void;
-  openFinishAccount: (payload: FinishPayload) => void;
+  openFinishAccount: (payload?: FinishPayload) => void;
   closeAuthModal: () => void;
 };
 
@@ -38,8 +38,8 @@ export function AuthModalProvider({
     setState({ type: "login", payload: payload ?? {} });
   };
 
-  const openFinishAccount = (payload: FinishPayload) => {
-    setState({ type: "finish", payload });
+  const openFinishAccount = (payload?: FinishPayload) => {
+    setState({ type: "finish", payload: payload ?? {} });
   };
 
   const closeAuthModal = () => setState(null);
@@ -63,7 +63,7 @@ export function AuthModalProvider({
 
       <FinishAccountModal
         isOpen={state?.type === "finish"}
-        guestRef={state?.type === "finish" ? state.payload.guestRef : null}
+        guestRef={state?.type === "finish" ? state.payload.guestRef ?? null : null}
         onClose={closeAuthModal}
         onOpenLogin={(payload) => {
           openLogin(payload);

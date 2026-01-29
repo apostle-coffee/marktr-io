@@ -32,7 +32,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // ------------------------------------------------------------------
 async function ensureProfileInsertOnly(user: User) {
   const uid = user.id;
-  const email = user.email ?? null;
+  const isAnonymous = (user as any)?.is_anonymous === true;
+  const email = isAnonymous ? "" : user.email ?? "";
   const name = (user.user_metadata as any)?.name ?? null;
 
   try {

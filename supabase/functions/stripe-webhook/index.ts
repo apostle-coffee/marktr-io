@@ -414,10 +414,7 @@ Deno.serve(async (req) => {
           (session.client_reference_id as string | null) ??
           (session.metadata as any)?.user_id ??
           null;
-        const guestRef =
-          (session.metadata as any)?.guest_ref ??
-          (session.client_reference_id as string | null) ??
-          null;
+        const guestRef = (session.metadata as any)?.guest_ref ?? null;
         const sessionId = session.id;
         const stripeCustomerId = session.customer ? String(session.customer) : null;
         const stripeSubscriptionId = session.subscription

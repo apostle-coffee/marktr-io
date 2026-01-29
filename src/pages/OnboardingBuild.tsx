@@ -70,7 +70,8 @@ export default function OnboardingBuild() {
   const navigate = useNavigate();
   const { icps, isLoading: icpsLoading } = useICPs();
   const { tier: userTier, effectiveTier, loading: subscriptionLoading } = useSubscription();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const anonInitRef = useRef(false);
   const [leadToken, setLeadToken] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>("1_Welcome");
   const hasRunRef = useRef(false);
@@ -89,6 +90,16 @@ export default function OnboardingBuild() {
     currency: "GBP",
     email: "",
   });
+
+  useEffect(() => {
+    if (anonInitRef.current) return;
+    if (authLoading) return;
+    if (user) return;
+    anonInitRef.current = true;
+    supabase.auth.signInAnonymously().catch((err) => {
+      console.warn("[Onboarding] anonymous sign-in failed", err);
+    });
+  }, [authLoading, user]);
 
   const captureLead = useCallback(
     async (email: string, token: string | null) => {

@@ -12,7 +12,14 @@ type CreateCheckoutInput = {
   successUrl: string;
   cancelUrl: string;
   customerEmail?: string;
+  force?: boolean;
 };
+
+const ACTIVE_STATUSES = ["trialing", "active", "past_due", "unpaid"];
+
+function escapeStripeSearchValue(v: string) {
+  return v.replace(/["\\]/g, "\\$&").trim();
+}
 
 function json(resBody: unknown, status = 200) {
   return new Response(JSON.stringify(resBody), {
@@ -59,6 +66,8 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as CreateCheckoutInput;
+    const force = Boolean(body?.force);
+    const customerEmail = body?.customerEmail?.trim() || null;
     if (!body?.priceId || !body?.successUrl || !body?.cancelUrl) {
       return json({ error: "Missing required fields" }, 400);
     }
@@ -66,18 +75,26 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    let user: { id: string; email?: string | null } | null = null;
-    if (authHeader.startsWith("Bearer ")) {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const {
-        data: { user: authUser },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (!userError && authUser?.id) {
-        user = authUser;
-      }
+    if (!authHeader.startsWith("Bearer ")) {
+      return json({ error: "Missing or invalid Authorization header" }, 401);
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user?.id) {
+      return json(
+        {
+          ok: false,
+          code: "ANON_REQUIRED",
+          message: "Please start an anonymous session before checkout.",
+        },
+        401
+      );
     }
 
     const stripe = new Stripe(stripeKey, {
@@ -85,113 +102,175 @@ Deno.serve(async (req) => {
       httpClient: Stripe.createFetchHttpClient(),
     });
 
-    const guestRef = crypto.randomUUID();
+    // Email-level duplicate subscription nudge (best-effort)
+    if (!force && customerEmail) {
+      try {
+        const safeEmail = escapeStripeSearchValue(customerEmail);
+
+        const customers = await stripe.customers.search({
+          query: `email:"${safeEmail}"`,
+          limit: 5,
+        });
+
+        let foundCustomerWithActiveSub: string | null = null;
+
+        for (const c of customers.data || []) {
+          if (!c?.id) continue;
+
+          const subs = await stripe.subscriptions.list({
+            customer: c.id,
+            status: "all",
+            limit: 10,
+          });
+
+          const hasActive = (subs.data || []).some((s) =>
+            ACTIVE_STATUSES.includes(String(s.status))
+          );
+
+          if (hasActive) {
+            foundCustomerWithActiveSub = c.id;
+            break;
+          }
+        }
+
+        if (foundCustomerWithActiveSub) {
+          let portalUrl: string | null = null;
+          try {
+            const returnUrl = (() => {
+              try {
+                const url = new URL(body.successUrl);
+                return `${url.origin}/account`;
+              } catch {
+                return body.cancelUrl;
+              }
+            })();
+
+            const portalSession = await stripe.billingPortal.sessions.create({
+              customer: foundCustomerWithActiveSub,
+              return_url: returnUrl,
+            });
+
+            portalUrl = portalSession.url ?? null;
+          } catch {
+            portalUrl = null;
+          }
+
+          return json({
+            ok: false,
+            code: "EMAIL_ALREADY_SUBSCRIBED",
+            message:
+              "This email already has an active or trial subscription. You can manage it, or continue anyway.",
+            email: customerEmail,
+            portalUrl,
+          });
+        }
+      } catch (e) {
+        console.warn("[create-checkout-session] email precheck failed", e);
+      }
+    }
+
+    const { data: activeSub, error: activeSubError } = await supabaseAdmin
+      .from("stripe_subscriptions")
+      .select("stripe_subscription_id,stripe_customer_id,status")
+      .eq("user_id", user.id)
+      .in("status", ACTIVE_STATUSES)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (activeSubError) {
+      return json({ error: "Failed to check existing subscriptions" }, 500);
+    }
+
+    if (activeSub) {
+      let stripeCustomerId: string | null = activeSub.stripe_customer_id ?? null;
+
+      if (!stripeCustomerId) {
+        const { data: customerRow } = await supabaseAdmin
+          .from("stripe_customers")
+          .select("stripe_customer_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        stripeCustomerId = customerRow?.stripe_customer_id ?? null;
+      }
+
+      let portalUrl: string | null = null;
+      if (stripeCustomerId) {
+        const returnUrl = (() => {
+          try {
+            const url = new URL(body.successUrl);
+            return `${url.origin}/account`;
+          } catch {
+            return body.cancelUrl;
+          }
+        })();
+
+        try {
+          const portalSession = await stripe.billingPortal.sessions.create({
+            customer: stripeCustomerId,
+            return_url: returnUrl,
+          });
+          portalUrl = portalSession.url ?? null;
+        } catch {
+          portalUrl = null;
+        }
+      }
+
+      return json({
+        ok: false,
+        code: "ALREADY_SUBSCRIBED",
+        message:
+          "You already have an active subscription. You can amend it from your Account page.",
+        portalUrl,
+      });
+    }
 
     const successUrl = (() => {
       try {
         const url = new URL(body.successUrl);
-        if (!user?.id && !url.searchParams.get("guest_ref")) {
-          url.searchParams.set("guest_ref", guestRef);
-        }
         if (!url.searchParams.get("session_id")) {
           url.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}");
         }
         return url.toString();
       } catch {
         const joiner = body.successUrl.includes("?") ? "&" : "?";
-        const guestPart = user?.id
-          ? ""
-          : `guest_ref=${encodeURIComponent(guestRef)}&`;
-        return `${body.successUrl}${joiner}${guestPart}session_id={CHECKOUT_SESSION_ID}`;
+        return `${body.successUrl}${joiner}session_id={CHECKOUT_SESSION_ID}`;
       }
     })();
 
     let stripeCustomerId: string | null = null;
 
-    if (user?.id) {
-      const { data: existingCustomer, error: existingCustomerError } = await supabaseAdmin
+    const { data: existingCustomer, error: existingCustomerError } =
+      await supabaseAdmin
         .from("stripe_customers")
         .select("stripe_customer_id")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (existingCustomerError) {
-        return json({ error: "Failed to load Stripe customer mapping" }, 500);
-      }
-
-      if (existingCustomer?.stripe_customer_id) {
-        stripeCustomerId = existingCustomer.stripe_customer_id;
-
-        try {
-          await stripe.customers.retrieve(stripeCustomerId);
-        } catch (err: any) {
-          const code = err?.code;
-          const message = err?.message || "";
-          const isMissing =
-            code === "resource_missing" ||
-            message.toLowerCase().includes("no such customer");
-
-          if (isMissing) {
-            try {
-              await supabaseAdmin
-                .from("stripe_customers")
-                .delete()
-                .eq("user_id", user.id);
-            } catch {
-              // ignore delete errors; we will overwrite with upsert
-            }
-            stripeCustomerId = null;
-          } else {
-            throw err;
-          }
-        }
-      }
+    if (existingCustomerError) {
+      return json({ error: "Failed to load Stripe customer mapping" }, 500);
     }
 
-    if (user?.id && !stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: user.email ?? undefined,
-        metadata: { user_id: user.id },
-      });
-      stripeCustomerId = customer.id;
-
-      const { error: insertError } = await supabaseAdmin
-        .from("stripe_customers")
-        .upsert(
-          {
-            user_id: user.id,
-            stripe_customer_id: stripeCustomerId,
-          },
-          { onConflict: "user_id" }
-        );
-
-      if (insertError) {
-        return json({ error: "Failed to store Stripe customer" }, 500);
-      }
+    if (existingCustomer?.stripe_customer_id) {
+      stripeCustomerId = existingCustomer.stripe_customer_id;
     }
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
-      ...(!stripeCustomerId && body.customerEmail
-        ? { customer_email: body.customerEmail }
+      ...(!stripeCustomerId && customerEmail
+        ? { customer_email: customerEmail }
         : {}),
       line_items: [{ price: body.priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: 7,
-        ...(user?.id
-          ? {
-              metadata: {
-                user_id: user.id,
-              },
-            }
-          : {
-              metadata: { guest_ref: guestRef },
-            }),
+        metadata: {
+          user_id: user.id,
+        },
       },
-      ...(user?.id ? { client_reference_id: user.id } : { client_reference_id: guestRef }),
+      client_reference_id: user.id,
       metadata: {
-        ...(user?.id ? { user_id: user.id } : { guest_ref: guestRef }),
+        user_id: user.id,
         price_id: body.priceId,
       },
       payment_method_collection: "always",

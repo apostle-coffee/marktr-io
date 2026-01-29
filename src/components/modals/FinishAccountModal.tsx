@@ -3,6 +3,7 @@ import { supabase } from "../../config/supabase";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   buildLinkBody,
   clearPendingGuestLink,
@@ -12,7 +13,7 @@ import {
 
 type FinishAccountModalProps = {
   isOpen: boolean;
-  guestRef: string | null;
+  guestRef?: string | null;
   onClose: () => void;
   onOpenLogin: (payload: {
     email?: string | null;
@@ -34,6 +35,8 @@ export function FinishAccountModal({
   onClose,
   onOpenLogin,
 }: FinishAccountModalProps) {
+  const { user } = useAuth();
+  const isAnonymous = Boolean((user as any)?.is_anonymous);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -57,6 +60,11 @@ export function FinishAccountModal({
     setFormError(null);
     setSuccess(null);
     setDebugDetails(null);
+
+    if (isAnonymous) {
+      setLoading(false);
+      return;
+    }
 
     if (!resolvedGuestRef && !sessionId) {
       setLoading(false);
@@ -116,12 +124,13 @@ export function FinishAccountModal({
       setError("We couldn't load your checkout details.");
       setDebugDetails((prev: any) => prev ?? { err: err?.message ?? String(err) });
     }
-  }, [resolvedGuestRef, sessionId]);
+  }, [resolvedGuestRef, sessionId, isAnonymous]);
 
   useEffect(() => {
     if (!isOpen) return;
+    if (isAnonymous) return;
     void loadCheckoutDetails();
-  }, [isOpen, loadCheckoutDetails]);
+  }, [isOpen, loadCheckoutDetails, isAnonymous]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -197,13 +206,43 @@ export function FinishAccountModal({
       setFormError("Passwords do not match.");
       return;
     }
-    if (!resolvedGuestRef && !sessionId) {
+    if (!isAnonymous && !resolvedGuestRef && !sessionId) {
       setFormError("Missing checkout reference. Please try the upgrade flow again.");
       return;
     }
 
     setLoading(true);
     try {
+      if (isAnonymous) {
+        const { error: updateError } = await supabase.auth.updateUser({
+          email,
+          password,
+          data: { name: name.trim() || null },
+        });
+
+        if (updateError) {
+          setFormError(updateError.message || "Unable to update account.");
+          return;
+        }
+
+        if (user?.id) {
+          await supabase
+            .from("profiles")
+            .update({
+              email: email?.trim() || "",
+              name: name.trim() || null,
+            })
+            .eq("id", user.id);
+        }
+
+        setSuccess("Account updated. Redirecting…");
+        window.setTimeout(() => {
+          onClose();
+          window.location.reload();
+        }, 600);
+        return;
+      }
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -309,7 +348,7 @@ export function FinishAccountModal({
     );
   }
 
-  if (!email) {
+  if (!email && !isAnonymous) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
         <div className="bg-background border border-black rounded-design shadow-2xl w-full max-w-md p-6 text-center">
@@ -381,8 +420,9 @@ export function FinishAccountModal({
             <Input
               id="finish-email"
               type="email"
-              value={email}
-              readOnly
+              value={email ?? ""}
+              readOnly={!isAnonymous}
+              onChange={(e) => setEmail(e.target.value)}
               className="border border-black rounded-design px-4 py-3 bg-white"
             />
           </div>

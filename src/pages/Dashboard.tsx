@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { ICPPreviewCard } from "../components/cards/ICPPreviewCard";
@@ -28,6 +28,7 @@ export default function Dashboard() {
   const location = useLocation();
   const { openPaywall } = usePaywall();
   const { openFinishAccount } = useAuthModal();
+  const finishPromptedRef = useRef(false);
 
   // Fetch data from Supabase
   const { user, loading: authLoading } = useAuth();
@@ -94,8 +95,14 @@ export default function Dashboard() {
     const params = new URLSearchParams(location.search);
     const checkout = params.get("checkout");
     const guestRef = params.get("guest_ref");
-    if (checkout === "success" && guestRef) {
-      openFinishAccount({ guestRef });
+    const isAnonymous = Boolean((user as any)?.is_anonymous);
+    if (checkout === "success" && !finishPromptedRef.current) {
+      finishPromptedRef.current = true;
+      if (guestRef) {
+        openFinishAccount({ guestRef });
+      } else if (isAnonymous) {
+        openFinishAccount();
+      }
 
       const url = new URL(window.location.href);
       url.searchParams.delete("checkout");
@@ -103,7 +110,16 @@ export default function Dashboard() {
       url.searchParams.delete("session_id");
       window.history.replaceState({}, "", `${url.pathname}${url.search}`);
     }
-  }, [location.search, openFinishAccount]);
+  }, [location.search, openFinishAccount, user]);
+
+  useEffect(() => {
+    if (finishPromptedRef.current) return;
+    const isAnonymous = Boolean((user as any)?.is_anonymous);
+    if (isAnonymous && isPro) {
+      finishPromptedRef.current = true;
+      openFinishAccount();
+    }
+  }, [user, isPro, openFinishAccount]);
 
   const [icpAvatarModal, setIcpAvatarModal] = useState({
     open: false,
