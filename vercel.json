@@ -1,23 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/maintenance.html",
-      "destination": "/maintenance.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/",
-      "has": [
-        {
-          "type": "query",
-          "key": "maintenance",
-          "value": "on"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
-    }
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
