@@ -34,6 +34,11 @@ function json(resBody: unknown, status = 200) {
   });
 }
 
+function errorJson(resBody: unknown, status: number) {
+  console.error("[create-checkout-session] returning error", { status, body: resBody });
+  return json(resBody, status);
+}
+
 function corsPreflight(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -54,7 +59,7 @@ Deno.serve(async (req) => {
 
   try {
     if (req.method !== "POST") {
-      return json({ error: "Method not allowed" }, 405);
+      return errorJson({ error: "Method not allowed" }, 405);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -63,7 +68,7 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !stripeKey) {
-      return json({ error: "Missing server env vars" }, 500);
+      return errorJson({ error: "Missing server env vars" }, 500);
     }
 
     const body = (await req.json()) as CreateCheckoutInput;
@@ -76,7 +81,10 @@ Deno.serve(async (req) => {
     if (!body?.cancelUrl) missingFields.push("cancelUrl");
     if (!customerEmail) missingFields.push("customerEmail");
     if (missingFields.length) {
-      return json({ error: "Missing required fields", fields: missingFields }, 400);
+      return errorJson(
+        { error: "Missing required fields", fields: missingFields },
+        400
+      );
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -200,7 +208,10 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (activeSubError) {
-        return json({ error: "Failed to check existing subscriptions" }, 500);
+        return errorJson(
+          { error: "Failed to check existing subscriptions" },
+          500
+        );
       }
 
       if (activeSub) {
@@ -280,7 +291,10 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
       if (existingCustomerError) {
-        return json({ error: "Failed to load Stripe customer mapping" }, 500);
+        return errorJson(
+          { error: "Failed to load Stripe customer mapping" },
+          500
+        );
       }
 
       if (existingCustomer?.stripe_customer_id) {
@@ -312,7 +326,10 @@ Deno.serve(async (req) => {
     });
 
     if (!session.url) {
-      return json({ error: "Checkout session failed", message: "Missing URL" }, 500);
+      return errorJson(
+        { error: "Checkout session failed", message: "Missing URL" },
+        500
+      );
     }
 
     console.log("[create-checkout-session] branch: created checkout session", {
@@ -322,7 +339,7 @@ Deno.serve(async (req) => {
     return json({ checkoutUrl: session.url, url: session.url });
   } catch (err: any) {
     console.error("create-checkout-session error", err);
-    return json(
+    return errorJson(
       {
         error: "Checkout session failed",
         message: err?.message ?? "Unknown error",
