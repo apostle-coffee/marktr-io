@@ -28,6 +28,8 @@ export function PaywallModal({
 
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  const trimmedEmail = email.trim();
+  const hasValidEmail = isValidEmail(trimmedEmail);
 
   const trialFeatures = [
     "All 3 ICPs unlocked",
@@ -52,8 +54,15 @@ export function PaywallModal({
 
   const handleConfirmStartTrial = () => {
     setShowExitConfirm(false);
-    if (!isValidEmail(email)) return;
-    onUpgrade(selectedPlan, email.trim());
+    if (!hasValidEmail) {
+      console.warn("[paywall] Email required before checkout (confirm start trial).");
+      return;
+    }
+    console.log("[paywall] create-checkout-session payload (from modal)", {
+      plan: selectedPlan,
+      email: trimmedEmail,
+    });
+    onUpgrade(selectedPlan, trimmedEmail);
   };
 
   return (
@@ -216,10 +225,17 @@ export function PaywallModal({
           <div className="space-y-4">
             <Button
               onClick={() => {
-                if (!isValidEmail(email)) return;
-                onUpgrade(selectedPlan, email.trim());
+                if (!hasValidEmail) {
+                  console.warn("[paywall] Email required before checkout (start trial).");
+                  return;
+                }
+                console.log("[paywall] create-checkout-session payload (from modal)", {
+                  plan: selectedPlan,
+                  email: trimmedEmail,
+                });
+                onUpgrade(selectedPlan, trimmedEmail);
               }}
-              disabled={isStartingCheckout || !isValidEmail(email)}
+              disabled={isStartingCheckout || !hasValidEmail}
               className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design py-6 text-lg transition-all hover:scale-[1.02] hover:shadow-lg font-['Inter']"
             >
               {isStartingCheckout ? (
@@ -296,7 +312,7 @@ export function PaywallModal({
             <div className="flex flex-col gap-3">
               <Button
                 onClick={handleConfirmStartTrial}
-                disabled={isStartingCheckout || !isValidEmail(email)}
+                disabled={isStartingCheckout || !hasValidEmail}
                 className="w-full bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design font-['Inter']"
               >
                 Start free trial

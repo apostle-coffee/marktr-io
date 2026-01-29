@@ -64,8 +64,13 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
   const startCheckout = useCallback(
     async (plan?: Plan, email?: string, force?: boolean) => {
       const nextPlan = normalisePlan(plan ?? selectedPlan);
+      const trimmedEmail = (email ?? "").trim();
 
       try {
+        if (!trimmedEmail) {
+          console.warn("[paywall] Email required before checkout.");
+          throw new Error("Email is required to start checkout.");
+        }
         setIsStartingCheckout(true);
         const {
           data: { user: currentUser },
@@ -105,32 +110,47 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
-        const { data, error } = await supabase.functions.invoke(
-          "create-checkout-session",
-          {
-            body: {
-              priceId,
-              successUrl: `${origin}/dashboard?checkout=success`,
-              cancelUrl: `${origin}/dashboard?checkout=cancel`,
-              customerEmail: email?.trim(),
-              force: Boolean(force),
-            },
-          }
-        );
+        const payload = {
+          priceId,
+          successUrl: `${origin}/dashboard?checkout=success`,
+          cancelUrl: `${origin}/dashboard?checkout=cancel`,
+          customerEmail: trimmedEmail,
+          force: Boolean(force),
+        };
 
-        console.log("[paywall] checkout response", {
-          hasError: !!error,
-          dataKeys: Object.keys(data ?? {}),
-          url: data?.url,
+        console.log("[paywall] create-checkout-session payload", payload);
+
+        const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
+        const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token ?? "";
+        const checkoutUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
+
+        console.log("[paywall] create-checkout-session url", checkoutUrl);
+        const res = await fetch(checkoutUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
         });
-        if (error) {
-          console.error("[paywall] checkout error", error, (error as any)?.context);
+
+        const raw = await res.text();
+        console.log("checkout raw response", res.status, raw);
+
+        let data: any = null;
+        try {
+          data = raw ? JSON.parse(raw) : null;
+        } catch (parseError) {
+          console.error("[paywall] checkout response parse error", parseError);
         }
 
         // Surface the real error details (critical for debugging)
-        if (error) {
-          console.error("[paywall] create-checkout-session invoke error", {
-            error,
+        if (!res.ok) {
+          console.error("[paywall] create-checkout-session response not ok", {
+            status: res.status,
             data,
             plan: nextPlan,
             priceId,
@@ -138,12 +158,13 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           const msg =
             (data as any)?.message ||
             (data as any)?.error ||
-            (error as any)?.message ||
+            `Request failed with status ${res.status}` ||
             "Unexpected error";
           throw new Error(msg);
         }
 
         if (data?.code === "ALREADY_SUBSCRIBED") {
+          console.log("[paywall] branch: already subscribed (code)");
           setAlreadySubscribed({
             open: true,
             portalUrl: (data as any)?.portalUrl ?? null,
@@ -154,6 +175,7 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data?.code === "EMAIL_ALREADY_SUBSCRIBED") {
+          console.log("[paywall] branch: email already subscribed (code)");
           setEmailAlreadySubscribed({
             open: true,
             email: (data as any)?.email ?? null,
@@ -165,11 +187,23 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        if (!data?.url) throw new Error("Checkout URL missing");
-        console.log("[paywall] redirecting to checkout", data.url);
+        if (data?.alreadySubscribed === true) {
+          console.log("[paywall] branch: already subscribed (flag)");
+          setAlreadySubscribed({
+            open: true,
+            portalUrl: (data as any)?.billingPortalUrl ?? (data as any)?.portalUrl ?? null,
+          });
+          setShowPaywall(false);
+          setIsStartingCheckout(false);
+          return;
+        }
+
+        const redirectUrl = (data as any)?.checkoutUrl;
+        if (!redirectUrl) throw new Error("Checkout URL missing");
+        console.log("[paywall] branch: redirecting to checkout", redirectUrl);
         // NOTE: we intentionally do not unset isStartingCheckout here because
         // the browser will navigate away immediately.
-        window.location.assign(data.url);
+        window.location.assign(redirectUrl);
       } catch (err) {
         console.error("[paywall] startCheckout failed", err);
         alert(

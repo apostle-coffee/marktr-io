@@ -16,6 +16,7 @@ type CreateCheckoutInput = {
 };
 
 const ACTIVE_STATUSES = ["trialing", "active", "past_due", "unpaid"];
+const EMAIL_ACTIVE_STATUSES = ["trialing", "active"];
 
 function escapeStripeSearchValue(v: string) {
   return v.replace(/["\\]/g, "\\$&").trim();
@@ -68,6 +69,7 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as CreateCheckoutInput;
     const force = Boolean(body?.force);
     const customerEmail = body?.customerEmail?.trim() || null;
+    console.log("[create-checkout-session] received email", customerEmail ?? "(none)");
     if (!body?.priceId || !body?.successUrl || !body?.cancelUrl) {
       return json({ error: "Missing required fields" }, 400);
     }
@@ -104,6 +106,10 @@ Deno.serve(async (req) => {
 
     // Email-level duplicate subscription nudge (best-effort)
     if (!force && customerEmail) {
+      console.log("[create-checkout-session] email precheck: searching active subs", {
+        email: customerEmail,
+        statuses: EMAIL_ACTIVE_STATUSES,
+      });
       try {
         const safeEmail = escapeStripeSearchValue(customerEmail);
 
@@ -117,15 +123,19 @@ Deno.serve(async (req) => {
         for (const c of customers.data || []) {
           if (!c?.id) continue;
 
-          const subs = await stripe.subscriptions.list({
+          const activeSubs = await stripe.subscriptions.list({
             customer: c.id,
-            status: "all",
-            limit: 10,
+            status: "active",
+            limit: 1,
+          });
+          const trialSubs = await stripe.subscriptions.list({
+            customer: c.id,
+            status: "trialing",
+            limit: 1,
           });
 
-          const hasActive = (subs.data || []).some((s) =>
-            ACTIVE_STATUSES.includes(String(s.status))
-          );
+          const hasActive =
+            (activeSubs.data?.length ?? 0) > 0 || (trialSubs.data?.length ?? 0) > 0;
 
           if (hasActive) {
             foundCustomerWithActiveSub = c.id;
@@ -134,6 +144,10 @@ Deno.serve(async (req) => {
         }
 
         if (foundCustomerWithActiveSub) {
+          console.log("[create-checkout-session] active subscription found for email", {
+            email: customerEmail,
+            stripeCustomerId: foundCustomerWithActiveSub,
+          });
           let portalUrl: string | null = null;
           try {
             const returnUrl = (() => {
@@ -156,17 +170,21 @@ Deno.serve(async (req) => {
           }
 
           return json({
-            ok: false,
-            code: "EMAIL_ALREADY_SUBSCRIBED",
-            message:
-              "This email already has an active or trial subscription. You can manage it, or continue anyway.",
-            email: customerEmail,
-            portalUrl,
+            alreadySubscribed: true,
+            billingPortalUrl: portalUrl,
           });
         }
+        console.log("[create-checkout-session] no active subscription found for email", {
+          email: customerEmail,
+        });
       } catch (e) {
         console.warn("[create-checkout-session] email precheck failed", e);
       }
+    } else {
+      console.log("[create-checkout-session] email precheck skipped", {
+        force,
+        hasEmail: Boolean(customerEmail),
+      });
     }
 
     const { data: activeSub, error: activeSubError } = await supabaseAdmin
@@ -183,6 +201,10 @@ Deno.serve(async (req) => {
     }
 
     if (activeSub) {
+      console.log("[create-checkout-session] active subscription found for user", {
+        userId: user.id,
+        status: activeSub.status,
+      });
       let stripeCustomerId: string | null = activeSub.stripe_customer_id ?? null;
 
       if (!stripeCustomerId) {
@@ -224,6 +246,9 @@ Deno.serve(async (req) => {
         portalUrl,
       });
     }
+    console.log("[create-checkout-session] no active subscription found for user", {
+      userId: user.id,
+    });
 
     const successUrl = (() => {
       try {
@@ -282,7 +307,11 @@ Deno.serve(async (req) => {
       return json({ error: "Checkout session failed", message: "Missing URL" }, 500);
     }
 
-    return json({ url: session.url });
+    console.log("[create-checkout-session] created checkout session", {
+      userId: user.id,
+      hasUrl: Boolean(session.url),
+    });
+    return json({ checkoutUrl: session.url, url: session.url });
   } catch (err: any) {
     console.error("create-checkout-session error", err);
     return json(
