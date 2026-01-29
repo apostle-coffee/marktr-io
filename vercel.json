@@ -1,3 +1,17 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [
+    { "source": "/maintenance", "destination": "/maintenance.html" },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "env",
+          "key": "MAINTENANCE_MODE",
+          "value": "on"
+        }
+      ],
+      "destination": "/maintenance"
+    },
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
