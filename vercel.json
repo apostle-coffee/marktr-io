@@ -1,17 +1,20 @@
 {
-  "redirects": [
+  "rewrites": [
     {
       "source": "/maintenance.html",
-      "destination": "/maintenance.html",
-      "permanent": false
+      "destination": "/maintenance.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/maintenance.html",
-      "permanent": false
-    }
-  ],
-  "rewrites": [
+      "destination": "/",
+      "has": [
+        {
+          "type": "query",
+          "key": "maintenance",
+          "value": "on"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "destination": "/"
