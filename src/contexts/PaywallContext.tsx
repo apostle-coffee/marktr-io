@@ -112,6 +112,7 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
 
         const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
         const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+        const checkoutGuestSecret = (import.meta.env.VITE_CHECKOUT_GUEST_SECRET || "").trim();
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData?.session ?? null;
         const accessToken = session?.access_token ?? "";
@@ -140,6 +141,8 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         };
         if (accessToken) {
           headers.Authorization = `Bearer ${accessToken}`;
+        } else {
+          headers["x-guest-secret"] = checkoutGuestSecret;
         }
         const res = await fetch(checkoutUrl, {
           method: "POST",

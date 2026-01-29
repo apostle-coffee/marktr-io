@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const checkoutGuestSecret = Deno.env.get("CHECKOUT_GUEST_SECRET");
 
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey || !stripeKey) {
       return errorJson({ error: "Missing server env vars" }, 500);
@@ -90,6 +91,15 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? "";
     const hasAuthHeader = authHeader.startsWith("Bearer ");
     console.log(`[create-checkout-session] auth_present=${hasAuthHeader}`);
+    if (!hasAuthHeader) {
+      if (!checkoutGuestSecret) {
+        return errorJson({ error: "Missing server env vars" }, 500);
+      }
+      const guestSecret = req.headers.get("x-guest-secret") ?? "";
+      if (guestSecret !== checkoutGuestSecret) {
+        return errorJson({ error: "Unauthorized" }, 401);
+      }
+    }
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     let user: { id: string } | null = null;
     if (hasAuthHeader) {

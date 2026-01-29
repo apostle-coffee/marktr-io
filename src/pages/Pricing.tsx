@@ -41,8 +41,8 @@ export default function Pricing() {
       answer: "We offer a 14-day money-back guarantee on all paid plans. For full details, see our Refund Policy.",
     },
     {
-      question: "How does billing through Polar work?",
-      answer: "Polar is our secure payment partner. They handle all billing and provide you with receipts. You can manage your subscription directly through your account settings.",
+      question: "How does billing through Stripe work?",
+      answer: "Stripe is our secure payment partner. They handle all billing and provide you with receipts. You can manage your subscription directly through your account settings.",
     },
   ];
 
@@ -332,17 +332,35 @@ export default function Pricing() {
               <thead>
                 <tr className="border-b border-warm-grey">
                   <th className="text-left p-4 sm:p-6 font-['Fraunces'] text-lg">Features</th>
-                  <th className="text-center p-4 sm:p-6 font-['Fraunces'] text-lg">Free</th>
+                  <th className="text-center p-4 sm:p-6 font-['Fraunces'] text-lg">Free (Guest)</th>
                   <th className="text-center p-4 sm:p-6 font-['Fraunces'] text-lg bg-button-green/10">Monthly</th>
                   <th className="text-center p-4 sm:p-6 font-['Fraunces'] text-lg bg-button-green/10">Yearly</th>
                 </tr>
               </thead>
               <tbody className="font-['Inter'] text-sm">
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Number of ICPs</td>
-                  <td className="text-center p-4 sm:p-6 text-foreground/60">1 (locked)</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited</td>
+                  <td className="p-4 sm:p-6">Structured ICP framework (goals, pains, segments)</td>
+                  <td className="text-center p-4 sm:p-6">
+                    <Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: "#4A9D3C" }} />
+                  </td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5">
+                    <Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: "#4A9D3C" }} />
+                  </td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5">
+                    <Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: "#4A9D3C" }} />
+                  </td>
+                </tr>
+                <tr className="border-b border-warm-grey">
+                  <td className="p-4 sm:p-6">ICPs included</td>
+                  <td className="text-center p-4 sm:p-6 text-foreground/60">1 ICP (guest session)</td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited ICPs</td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited ICPs</td>
+                </tr>
+                <tr className="border-b border-warm-grey">
+                  <td className="p-4 sm:p-6">Save ICPs to your account</td>
+                  <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
                   <td className="p-4 sm:p-6">Edit & regenerate ICPs</td>
@@ -351,45 +369,39 @@ export default function Pricing() {
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Content strategy tools</td>
+                  <td className="p-4 sm:p-6">Build brand pages</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Meta lookalike exports</td>
+                  <td className="p-4 sm:p-6">Generate marketing strategies</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Create collections</td>
+                  <td className="p-4 sm:p-6">Create & manage ICP collections</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Bonus ICP refresh/month</td>
+                  <td className="p-4 sm:p-6">Export ICPs & strategies as PDFs</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5 text-foreground/60">—</td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Priority persona rendering</td>
+                  <td className="p-4 sm:p-6">Faster ICP generation</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5 text-foreground/60">—</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
-                </tr>
-                <tr className="border-b border-warm-grey">
-                  <td className="p-4 sm:p-6">Avatar colour customisation</td>
-                  <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5 text-foreground/60">—</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr className="border-b border-warm-grey">
                   <td className="p-4 sm:p-6">Early access to new features</td>
                   <td className="text-center p-4 sm:p-6 text-foreground/60">—</td>
-                  <td className="text-center p-4 sm:p-6 bg-button-green/5 text-foreground/60">—</td>
+                  <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5"><Check className="w-5 h-5 mx-auto" strokeWidth={3} style={{ color: '#4A9D3C' }} /></td>
                 </tr>
                 <tr>
@@ -413,7 +425,7 @@ export default function Pricing() {
                 <Lock className="w-6 h-6" />
               </div>
               <p className="font-['Inter'] text-sm">
-                Secure checkout via Polar
+                Secure checkout via Stripe
               </p>
             </div>
             <div className="flex flex-col items-center gap-3">
