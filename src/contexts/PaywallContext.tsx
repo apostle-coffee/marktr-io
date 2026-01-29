@@ -170,6 +170,7 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           const msg =
             (data as any)?.message ||
             (data as any)?.error ||
+            raw ||
             `Request failed with status ${res.status}` ||
             "Unexpected error";
           throw new Error(msg);

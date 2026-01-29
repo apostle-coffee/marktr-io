@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const hasAuthHeader = authHeader.startsWith("Bearer ");
-    console.log("[create-checkout-session] auth header present", hasAuthHeader);
+    console.log(`[create-checkout-session] auth_present=${hasAuthHeader}`);
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     let user: { id: string } | null = null;
     if (hasAuthHeader) {
@@ -90,14 +90,15 @@ Deno.serve(async (req) => {
       });
       const { data, error: userError } = await supabase.auth.getUser();
       if (userError || !data?.user?.id) {
-        console.warn("[create-checkout-session] auth header invalid; proceeding as anon", {
+        console.warn("[create-checkout-session] auth_branch=anon (invalid token)", {
           error: userError,
         });
       } else {
         user = { id: data.user.id };
+        console.log("[create-checkout-session] auth_branch=authenticated");
       }
     } else {
-      console.log("[create-checkout-session] proceeding as anon (no auth header)");
+      console.log("[create-checkout-session] auth_branch=anon (no auth header)");
     }
 
     const stripe = new Stripe(stripeKey, {
