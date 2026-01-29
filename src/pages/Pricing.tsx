@@ -10,11 +10,11 @@ export default function Pricing() {
   const prices = {
     monthly: {
       GBP: 30,
-      USD: 39,
+      USD: 42,
     },
     yearly: {
       GBP: 25,
-      USD: 30,
+      USD: 35,
     },
   };
 
