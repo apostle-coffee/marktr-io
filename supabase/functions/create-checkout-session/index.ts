@@ -70,33 +70,34 @@ Deno.serve(async (req) => {
     const force = Boolean(body?.force);
     const customerEmail = body?.customerEmail?.trim() || null;
     console.log("[create-checkout-session] received email", customerEmail ?? "(none)");
-    if (!body?.priceId || !body?.successUrl || !body?.cancelUrl) {
-      return json({ error: "Missing required fields" }, 400);
+    const missingFields: string[] = [];
+    if (!body?.priceId) missingFields.push("priceId");
+    if (!body?.successUrl) missingFields.push("successUrl");
+    if (!body?.cancelUrl) missingFields.push("cancelUrl");
+    if (!customerEmail) missingFields.push("customerEmail");
+    if (missingFields.length) {
+      return json({ error: "Missing required fields", fields: missingFields }, 400);
     }
 
     const authHeader = req.headers.get("Authorization") ?? "";
+    const hasAuthHeader = authHeader.startsWith("Bearer ");
+    console.log("[create-checkout-session] auth header present", hasAuthHeader);
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    if (!authHeader.startsWith("Bearer ")) {
-      return json({ error: "Missing or invalid Authorization header" }, 401);
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user?.id) {
-      return json(
-        {
-          ok: false,
-          code: "ANON_REQUIRED",
-          message: "Please start an anonymous session before checkout.",
-        },
-        401
-      );
+    let user: { id: string } | null = null;
+    if (hasAuthHeader) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (userError || !data?.user?.id) {
+        console.warn("[create-checkout-session] auth header invalid; proceeding as anon", {
+          error: userError,
+        });
+      } else {
+        user = { id: data.user.id };
+      }
+    } else {
+      console.log("[create-checkout-session] proceeding as anon (no auth header)");
     }
 
     const stripe = new Stripe(stripeKey, {
@@ -187,68 +188,72 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: activeSub, error: activeSubError } = await supabaseAdmin
-      .from("stripe_subscriptions")
-      .select("stripe_subscription_id,stripe_customer_id,status")
-      .eq("user_id", user.id)
-      .in("status", ACTIVE_STATUSES)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (user?.id) {
+      const { data: activeSub, error: activeSubError } = await supabaseAdmin
+        .from("stripe_subscriptions")
+        .select("stripe_subscription_id,stripe_customer_id,status")
+        .eq("user_id", user.id)
+        .in("status", ACTIVE_STATUSES)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (activeSubError) {
-      return json({ error: "Failed to check existing subscriptions" }, 500);
-    }
-
-    if (activeSub) {
-      console.log("[create-checkout-session] active subscription found for user", {
-        userId: user.id,
-        status: activeSub.status,
-      });
-      let stripeCustomerId: string | null = activeSub.stripe_customer_id ?? null;
-
-      if (!stripeCustomerId) {
-        const { data: customerRow } = await supabaseAdmin
-          .from("stripe_customers")
-          .select("stripe_customer_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        stripeCustomerId = customerRow?.stripe_customer_id ?? null;
+      if (activeSubError) {
+        return json({ error: "Failed to check existing subscriptions" }, 500);
       }
 
-      let portalUrl: string | null = null;
-      if (stripeCustomerId) {
-        const returnUrl = (() => {
-          try {
-            const url = new URL(body.successUrl);
-            return `${url.origin}/account`;
-          } catch {
-            return body.cancelUrl;
-          }
-        })();
+      if (activeSub) {
+        console.log("[create-checkout-session] branch: active subscription found for user", {
+          userId: user.id,
+          status: activeSub.status,
+        });
+        let stripeCustomerId: string | null = activeSub.stripe_customer_id ?? null;
 
-        try {
-          const portalSession = await stripe.billingPortal.sessions.create({
-            customer: stripeCustomerId,
-            return_url: returnUrl,
-          });
-          portalUrl = portalSession.url ?? null;
-        } catch {
-          portalUrl = null;
+        if (!stripeCustomerId) {
+          const { data: customerRow } = await supabaseAdmin
+            .from("stripe_customers")
+            .select("stripe_customer_id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          stripeCustomerId = customerRow?.stripe_customer_id ?? null;
         }
-      }
 
-      return json({
-        ok: false,
-        code: "ALREADY_SUBSCRIBED",
-        message:
-          "You already have an active subscription. You can amend it from your Account page.",
-        portalUrl,
+        let portalUrl: string | null = null;
+        if (stripeCustomerId) {
+          const returnUrl = (() => {
+            try {
+              const url = new URL(body.successUrl);
+              return `${url.origin}/account`;
+            } catch {
+              return body.cancelUrl;
+            }
+          })();
+
+          try {
+            const portalSession = await stripe.billingPortal.sessions.create({
+              customer: stripeCustomerId,
+              return_url: returnUrl,
+            });
+            portalUrl = portalSession.url ?? null;
+          } catch {
+            portalUrl = null;
+          }
+        }
+
+        return json({
+          ok: false,
+          code: "ALREADY_SUBSCRIBED",
+          message:
+            "You already have an active subscription. You can amend it from your Account page.",
+          portalUrl,
+        });
+      }
+      console.log("[create-checkout-session] no active subscription found for user", {
+        userId: user.id,
       });
+    } else {
+      console.log("[create-checkout-session] skipping user subscription lookup (anon)");
     }
-    console.log("[create-checkout-session] no active subscription found for user", {
-      userId: user.id,
-    });
 
     const successUrl = (() => {
       try {
@@ -265,20 +270,24 @@ Deno.serve(async (req) => {
 
     let stripeCustomerId: string | null = null;
 
-    const { data: existingCustomer, error: existingCustomerError } =
-      await supabaseAdmin
-        .from("stripe_customers")
-        .select("stripe_customer_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+    if (user?.id) {
+      const { data: existingCustomer, error: existingCustomerError } =
+        await supabaseAdmin
+          .from("stripe_customers")
+          .select("stripe_customer_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
 
-    if (existingCustomerError) {
-      return json({ error: "Failed to load Stripe customer mapping" }, 500);
+      if (existingCustomerError) {
+        return json({ error: "Failed to load Stripe customer mapping" }, 500);
+      }
+
+      if (existingCustomer?.stripe_customer_id) {
+        stripeCustomerId = existingCustomer.stripe_customer_id;
+      }
     }
 
-    if (existingCustomer?.stripe_customer_id) {
-      stripeCustomerId = existingCustomer.stripe_customer_id;
-    }
+    const userMetadata = user?.id ? { user_id: user.id } : {};
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -289,14 +298,12 @@ Deno.serve(async (req) => {
       line_items: [{ price: body.priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: 7,
-        metadata: {
-          user_id: user.id,
-        },
+        metadata: userMetadata,
       },
-      client_reference_id: user.id,
+      ...(user?.id ? { client_reference_id: user.id } : {}),
       metadata: {
-        user_id: user.id,
         price_id: body.priceId,
+        ...userMetadata,
       },
       payment_method_collection: "always",
       success_url: successUrl,
@@ -307,8 +314,8 @@ Deno.serve(async (req) => {
       return json({ error: "Checkout session failed", message: "Missing URL" }, 500);
     }
 
-    console.log("[create-checkout-session] created checkout session", {
-      userId: user.id,
+    console.log("[create-checkout-session] branch: created checkout session", {
+      userId: user?.id ?? null,
       hasUrl: Boolean(session.url),
     });
     return json({ checkoutUrl: session.url, url: session.url });

@@ -123,22 +123,34 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
         const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
         const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token ?? "";
+        const session = sessionData?.session ?? null;
+        const accessToken = session?.access_token ?? "";
         const checkoutUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
 
+        console.log("[paywall] checkout session info", {
+          supabaseUrl,
+          hasAccessToken: Boolean(accessToken),
+          tokenPreview: accessToken ? accessToken.slice(0, 20) : "",
+        });
         console.log("[paywall] create-checkout-session url", checkoutUrl);
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          apikey: supabaseAnonKey,
+        };
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`;
+        }
         const res = await fetch(checkoutUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: supabaseAnonKey,
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers,
           body: JSON.stringify(payload),
         });
 
         const raw = await res.text();
         console.log("checkout raw response", res.status, raw);
+        if (!res.ok) {
+          console.log("[paywall] checkout non-2xx response", res.status, raw);
+        }
 
         let data: any = null;
         try {
