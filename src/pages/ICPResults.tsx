@@ -31,10 +31,11 @@ export default function ICPResults() {
   const { openLogin } = useAuthModal();
   const [guestICPs, setGuestICPsState] = useState<any[]>([]);
   const isGuest = !user;
+  const dashboardPath = user ? "/dashboard" : "/icp-results";
   const brandSeed = useMemo(() => getGuestBrandSeed(), []);
 
   const handleGoToDashboard = () => {
-    navigate("/dashboard");
+    navigate(dashboardPath);
   };
 
   const handleSignupToSave = () => {
@@ -141,7 +142,7 @@ export default function ICPResults() {
       <div className="bg-accent-grey/10 border-b border-black">
         <div className="container mx-auto px-4 py-10">
           <div className="flex justify-between items-center">
-            <Link to="/dashboard" className="text-sm font-['Inter'] underline">
+            <Link to={dashboardPath} className="text-sm font-['Inter'] underline">
               Back to Dashboard
             </Link>
             <span className="text-sm font-['Inter'] text-foreground/60">

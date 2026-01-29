@@ -110,22 +110,23 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           );
         }
 
-        const payload = {
-          priceId,
-          successUrl: `${origin}/dashboard?checkout=success`,
-          cancelUrl: `${origin}/dashboard?checkout=cancel`,
-          customerEmail: trimmedEmail,
-          force: Boolean(force),
-        };
-
-        console.log("[paywall] create-checkout-session payload", payload);
-
         const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
         const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData?.session ?? null;
         const accessToken = session?.access_token ?? "";
         const checkoutUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
+        const redirectBasePath = accessToken ? "/dashboard" : "/icp-results";
+
+        const payload = {
+          priceId,
+          successUrl: `${origin}${redirectBasePath}?checkout=success`,
+          cancelUrl: `${origin}${redirectBasePath}?checkout=cancel`,
+          customerEmail: trimmedEmail,
+          force: Boolean(force),
+        };
+
+        console.log("[paywall] create-checkout-session payload", payload);
 
         console.log("[paywall] checkout session info", {
           supabaseUrl,

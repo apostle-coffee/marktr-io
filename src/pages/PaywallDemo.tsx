@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { usePaywall } from "../contexts/PaywallContext";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function PaywallDemo() {
   const navigate = useNavigate();
   const { openPaywall } = usePaywall();
+  const { user } = useAuth();
+  const dashboardPath = user ? "/dashboard" : "/icp-results";
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -26,7 +29,7 @@ export default function PaywallDemo() {
 
           <div className="flex gap-4 justify-center">
             <Button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate(dashboardPath)}
               variant="outline"
               className="border-black rounded-design px-6 py-3"
             >

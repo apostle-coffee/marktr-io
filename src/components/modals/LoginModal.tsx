@@ -27,11 +27,25 @@ export function LoginModal({
   sessionId,
   onClose,
 }: LoginModalProps) {
-  const redirectAfterLogin = () => {
+  const handleClose = () => {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next");
-    const target = next && next.startsWith("/") ? next : "/dashboard";
-    window.location.assign(target);
+    const target = next && next.startsWith("/") ? next : "/icp-results";
+    onClose();
+    window.location.assign(`${window.location.origin}${target}`);
+  };
+
+  const redirectAfterLogin = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get("next");
+    if (next && next.startsWith("/")) {
+      window.location.assign(`${window.location.origin}${next}`);
+      return;
+    }
+    const { data } = await supabase.auth.getSession();
+    const isAuthed = Boolean(data?.session?.user?.id);
+    const target = isAuthed ? "/dashboard" : "/icp-results";
+    window.location.assign(`${window.location.origin}${target}`);
   };
   const [localEmail, setLocalEmail] = useState(email ?? "");
   const [password, setPassword] = useState("");
@@ -86,7 +100,7 @@ export function LoginModal({
       } catch {}
 
       onClose();
-      redirectAfterLogin();
+      await redirectAfterLogin();
     } catch (err) {
       setError("Login failed. Please try again.");
     } finally {
@@ -105,7 +119,9 @@ export function LoginModal({
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => {
+              void handleClose();
+            }}
             className="p-2 hover:bg-accent-grey/20 rounded-design transition-colors"
             aria-label="Close"
           >
