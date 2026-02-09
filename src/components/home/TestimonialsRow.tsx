@@ -1,4 +1,3 @@
-import { getProfileImage } from "@/config/profileImages";
 import svgPaths from "@/imports/svg-dy16vubapd";
 
 interface Testimonial {
@@ -17,7 +16,7 @@ export function TestimonialsRow() {
       role: "Founder",
       company: "LexKin",
       quote: "ICP Generator is a wonderfully easy tool to use, with a clear and intuitive interface. The pricing is extremely competitive and the customer service second to none!",
-      image: getProfileImage("ld1"),
+      image: "/images/avatars/female/18-24/female_18-24_008.png",
       color: "#FFD336",
     },
     {
@@ -25,7 +24,7 @@ export function TestimonialsRow() {
       role: "Project Manager",
       company: "Bullfinch Digital",
       quote: "We chose ICP Generator based on their highly competitive pricing and incredible interface. Not only that, their team gave 110% in helping craft the solution for our project.",
-      image: getProfileImage("adrian"),
+      image: "/images/avatars/male/18-24/male_18-24_002.png",
       color: "#FF9922",
     },
     {
@@ -33,7 +32,7 @@ export function TestimonialsRow() {
       role: "Head of Content",
       company: "AdBard",
       quote: "We've been working with ICP Generator for some time now. It's become the foundation of client onboarding and the creation of targeted marketing strategies.",
-      image: getProfileImage("belinda"),
+      image: "/images/avatars/female/35-44/female_35-44_004.png",
       color: "#96CBB6",
     },
   ];
