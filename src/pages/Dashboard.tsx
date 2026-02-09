@@ -393,7 +393,7 @@ export default function Dashboard() {
             {!isLoading && user && subReady && !isPro && (
               <div className="mb-8 bg-background border border-black rounded-design p-6 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="font-['Fraunces'] text-xl">Start your 7-day trial</h2>
+                  <h2 className="font-['Fraunces'] text-xl">Start your FREE 7-day trial</h2>
                   <p className="font-['Inter'] text-sm text-foreground/70">
                     Add payment details to unlock Pro features.
                   </p>

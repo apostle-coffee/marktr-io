@@ -10,7 +10,7 @@ export function FeaturesGrid() {
       description:
         "Create a detailed, accurate Ideal Customer Profile in seconds. Powered by AI and informed by real behaviour patterns - so you finally know who your customers are and what they care about.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-01.png",
     },
     {
       color: "green",
@@ -18,7 +18,7 @@ export function FeaturesGrid() {
       description:
         "Learn what motivates your customers, where they spend their time, what brands they trust, and the triggers that make them buy. Clear insights that take the guesswork out of your marketing.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-03.png",
     },
     {
       color: "yellow",
@@ -26,7 +26,7 @@ export function FeaturesGrid() {
       description:
         "Every ICP comes with actionable content pillars, messaging angles, and social ideas - giving you a solid blueprint for your next high-performing marketing campaign.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-02.png",
     },
     {
       color: "orange",
@@ -34,7 +34,7 @@ export function FeaturesGrid() {
       description:
         "Instantly generate accurate, lookalike-friendly audience data for Facebook & Instagram ads. Built from your unique Ideal Customer Profile, ready to export and use.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-04.png",
     },
     {
       color: "pink",
