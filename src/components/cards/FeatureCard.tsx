@@ -87,7 +87,7 @@ export function FeatureCard({
       </div>
 
       {/* Text Content Section */}
-      <div className="p-6">
+      <div className="p-6 pt-8">
         <p className="text-foreground/70">{description}</p>
       </div>
     </div>

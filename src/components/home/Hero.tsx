@@ -3,7 +3,7 @@ import { Button } from "../ui/button";
 export function Hero() {
 
   return (
-    <section className="relative overflow-hidden bg-background pt-8 pb-0 sm:pt-10 sm:pb-0 lg:pt-14 lg:pb-0">
+    <section className="relative overflow-hidden bg-background pt-6 pb-0 sm:pt-8 sm:pb-0 lg:pt-10 lg:pb-0">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
           {/* Badge */}
@@ -22,7 +22,7 @@ export function Hero() {
           </h2>
 
           {/* Onboarding Button */}
-          <div className="mb-12 flex w-full max-w-md flex-col gap-3 mx-auto justify-center items-center opacity-0 animate-fade-in-up delay-300">
+          <div className="mb-8 flex w-full max-w-md flex-col gap-3 mx-auto justify-center items-center opacity-0 animate-fade-in-up delay-300">
             <Button variant="cta" href="/onboarding-build">
               Generate Free Now
             </Button>
