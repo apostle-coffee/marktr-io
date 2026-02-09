@@ -654,39 +654,39 @@ export default function OnboardingBuild() {
   const SCREEN_STYLES: Record<Step, { bgColor: string; illustration: string }> = {
     "1_Welcome": {
       bgColor: "bg-purple/20",
-      illustration: "https://images.unsplash.com/photo-1612201584008-f46f8a16c66d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3ZWxjb21lJTIwaGFwcGluZXNzJTIwY2VsZWJyYXRpb258ZW58MXx8fHwxNzYzMjM1MzMwfDA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-01.png"
     },
     "2_Name": {
       bgColor: "bg-pink/20",
-      illustration: "https://images.unsplash.com/photo-1672462478040-a5920e2c23d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBzbWlsaW5nJTIwcG9ydHJhaXR8ZW58MXx8fHwxNzYzMTI3NDQ1fDA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-02.png"
     },
     "3_BrandName": {
       bgColor: "bg-orange/20",
-      illustration: "https://images.unsplash.com/photo-1540200049848-d9813ea0e120?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMHN0b3JlZnJvbnR8ZW58MXx8fHwxNzYzMTUyMzc5fDA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-03.png"
     },
     "4_BusinessDescription": {
       bgColor: "bg-yellow/20",
-      illustration: "https://images.unsplash.com/photo-1606234942951-b10a5b373ff0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsaWdodGJ1bGIlMjBpZGVhJTIwY3JlYXRpdmV8ZW58MXx8fHwxNzYzMjM1MzMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-04.png"
     },
     "5_ProductOrService": {
       bgColor: "bg-green/20",
-      illustration: "https://images.unsplash.com/photo-1759563874665-ffa9dfbd0205?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9kdWN0JTIwcGFja2FnZSUyMGdpZnR8ZW58MXx8fHwxNzYzMjM1MzMxfDA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-05.png"
     },
     "6_AssumedAudience": {
       bgColor: "bg-purple/20",
-      illustration: "https://images.unsplash.com/photo-1580849279061-0179c4ebf14e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZW9wbGUlMjBjb21tdW5pdHklMjBncm91cHxlbnwxfHx8fDE3NjMyMzUzMzJ8MA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-06.png"
     },
     "7_MarketingChannels": {
       bgColor: "bg-pink/20",
-      illustration: "https://images.unsplash.com/photo-1690883793939-f8cca2f28ee0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2NpYWwlMjBtZWRpYSUyMHBob25lfGVufDF8fHx8MTc2MzE2MTkzM3ww&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-07.png"
     },
     "8_GeographyCurrency": {
       bgColor: "bg-orange/20",
-      illustration: "https://images.unsplash.com/photo-1505764706515-aa95265c5abc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b3JsZCUyMG1hcHxlbnwxfHx8fDE3NjM0NzAxMzB8MA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-08.png"
     },
     "9_EmailCapture": {
       bgColor: "bg-green/20",
-      illustration: "https://images.unsplash.com/photo-1557200134-90327ee9fafa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbWFpbCUyMGluYm94JTIwbWVzc2FnZXxlbnwxfHx8fDE3NjMyMzUzMzN8MA&ixlib=rb-4.1.0&q=80&w=1080"
+      illustration: "/images/onboarding/onboarding-09.png"
     },
     "10_Loading": {
       bgColor: "bg-button-green/20",
