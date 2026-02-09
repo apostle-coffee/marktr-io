@@ -7,7 +7,7 @@ export function Hero() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
           {/* Badge */}
-          <img src="/images/hero.png" alt="" className="mb-6 w-1/2 h-auto opacity-0 animate-fade-in-up" />
+          <img src="/images/hero.png" alt="" className="mb-3 w-1/2 h-auto opacity-0 animate-fade-in-up" />
 
           {/* Main Heading */}
           <h1 className="mb-6 max-w-4xl font-['Fraunces'] text-4xl sm:text-5xl lg:text-6xl opacity-0 animate-fade-in-up delay-100 font-bold">
