@@ -8,7 +8,8 @@ export function HowItWorks() {
       title: "Tell us about your business",
       intro: "A short, friendly, conversational onboarding flow - no forms, no jargon.",
       bullets: [],
-      outro: "Just describe what you do, who you serve, and what makes your brand unique.\nYou can even talk instead of type.",
+      outro:
+        "Just describe what you do, who you serve, and what makes your brand unique.",
     },
     {
       number: 2,
@@ -22,7 +23,8 @@ export function HowItWorks() {
         "What triggers them to buy",
         "How they like to be spoken to",
       ],
-      outro: "You'll get one profile for free, with the others blurred as a sneak peek.",
+      outro:
+        "Unlock full access to all ICP Generator features for FREE during your 7 day trial.",
     },
     {
       number: 3,
@@ -35,7 +37,8 @@ export function HowItWorks() {
         "Exportable Meta ad audiences",
         "A clear roadmap to reach each customer",
       ],
-      outro: "Upgrade to unlock all three profiles — and get the complete content + ad strategy for each.",
+      outro:
+        "Start your FREE 7 day trial and get the complete content + ad strategy for each.",
     },
   ];
 
