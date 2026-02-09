@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { getProfileImage } from "@/config/profileImages";
 import svgPaths from "@/imports/svg-rk8otprxv2";
 
 export function IntroMessage() {
@@ -90,7 +89,7 @@ export function IntroMessage() {
                   />
                 </svg>
                 <img 
-                  src={getProfileImage("ld1")} 
+                  src="/images/avatars/female/45-54/female_45-54_001.png" 
                   alt="Charlotte" 
                   className="absolute inset-0 w-full h-full object-cover rounded-full p-2"
                 />

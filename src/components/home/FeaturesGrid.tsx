@@ -42,7 +42,7 @@ export function FeaturesGrid() {
       description:
         "No long forms or complicated surveys. Just a quick, friendly chat that turns your brand story into deep customer insight - in under a minute.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-05.png",
     },
     {
       color: "brown",
@@ -50,7 +50,7 @@ export function FeaturesGrid() {
       description:
         "Your customers evolve - and your ICPs can too. Update, adjust, and improve your profiles as your business grows, without starting from scratch.",
       isLocked: false,
-      screenshot: exampleScreenshot,
+      screenshot: "/images/features/ft-06.png",
     },
   ];
 
