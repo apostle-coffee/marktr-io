@@ -1195,25 +1195,222 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     slug: "stop-wasting-ad-spend",
     title: "Stop Wasting Ad Spend: How ICPs Improve Targeting",
     description:
-      "If you're reaching the wrong people, your ads will always underperform. ICP-driven insights fix that.",
+      "If your ads are underperforming, the issue is usually ICP clarity. Learn how better segment definition improves targeting and reduces wasted spend.",
+    introLine:
+      "Most underperforming ad accounts do not have a creative problem. They have a targeting clarity problem.",
     bgColor: "#F57BBE",
-    readingTime: "5 min read",
+    readingTime: "10 min read",
     date: "2026-02-13",
+    seoTitle: "Stop Wasting Ad Spend | How ICPs Improve Ad Targeting",
+    metaDescription:
+      "If your ads are underperforming, the issue is usually ICP clarity. Learn how better segment definition improves targeting and reduces wasted spend.",
+    faq: [
+      {
+        question: "Why do my ads get clicks but no sales?",
+        answer:
+          "Clicks without sales usually indicate message-to-segment mismatch. The audience is interested enough to click but not a strong commercial fit to convert.",
+      },
+      {
+        question: "Should I broaden or narrow targeting?",
+        answer:
+          "Narrow first around validated high-fit segments. Broaden only after conversion quality is stable and segment-level performance is clear.",
+      },
+      {
+        question: "Do lookalike audiences still work?",
+        answer:
+          "Yes, if seed quality is strong. Lookalikes built from validated high-fit customers usually outperform lookalikes built from mixed-quality cohorts.",
+      },
+      {
+        question: "How do I know if my ICP is wrong?",
+        answer:
+          "If cost per acquisition rises, conversion quality falls, sales rejects leads, and retention weakens in paid cohorts, your ICP is likely too broad or misaligned.",
+      },
+      {
+        question: "How long should I test new targeting?",
+        answer:
+          "Run tests long enough to compare qualified conversion by segment. Four to eight weeks often gives directional signal; stronger confidence needs broader cohort data.",
+      },
+    ],
     body: [
+      { type: "h2", text: "Direct Answer Summary" },
       {
         type: "p",
         text:
-          "Better targeting isn't more interests. It's clearer inputs. Your ICP gives you the language, pains, and contexts to target properly.",
+          "Better targeting is not about adding more interests. It is about improving the quality of your inputs.",
       },
-      { type: "h2", text: "Practical targeting wins" },
+      {
+        type: "p",
+        text:
+          "Ads underperform when they are shown to low-fit audiences that are unlikely to buy, retain, or expand. That usually inflates cost per acquisition and weakens conversion rate.",
+      },
+      {
+        type: "p",
+        text:
+          "A clear Ideal Customer Profile (ICP) improves audience quality, strengthens optimisation signals, and reduces wasted ad spend by concentrating delivery on segments with validated commercial fit.",
+      },
+      { type: "h2", text: "Why ads underperform even when creative looks strong" },
       {
         type: "ul",
         items: [
-          "Cleaner lookalike seeds (based on the right customer set)",
-          "Ad creative that matches real triggers and objections",
-          "Fewer wasted impressions on people who'll never convert",
+          "Broad targeting that mixes high-fit and low-fit audiences",
+          "Weak lookalike seed audiences built from blended customer lists",
+          "Vague messaging that does not match segment pain",
+          "No trigger alignment between message and buying timing",
+          "Offer-to-segment mismatch despite strong creative execution",
         ],
       },
+      { type: "h2", text: "Why ICP clarity fixes targeting" },
+      {
+        type: "p",
+        text:
+          "A strong ICP improves paid media performance because it improves input quality before launch.",
+      },
+      {
+        type: "p",
+        text:
+          "Paid platforms optimise based on signals you provide. If the inputs are broad, the learning will be broad.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Segment specificity improves algorithm learning",
+          "Higher conversion signals improve optimisation",
+          "Clear exclusion criteria remove low-fit traffic",
+          "Cleaner audience construction improves repeatability",
+          "Stronger message-market fit improves conversion quality",
+        ],
+      },
+      {
+        type: "h2",
+        text: "Practical targeting wins from a strong ICP",
+      },
+      { type: "h3", text: "Cleaner lookalike seeds" },
+      {
+        type: "p",
+        text:
+          "Use only validated high-fit customers in seed audiences. Segment-specific seeds typically outperform blended cohorts.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Seed from customers with strong retention and LTV",
+          "Avoid mixed-quality or high-churn seed lists",
+          "Build separate lookalikes by segment where possible",
+        ],
+      },
+      { type: "h3", text: "Creative that matches real triggers and objections" },
+      {
+        type: "p",
+        text:
+          "Use opening lines tied to real pains and objections observed in the target segment.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Lead with pain and timing trigger in the first line",
+          "Address common objections directly in copy",
+          "Use segment-specific language to improve CTR and CVR",
+        ],
+      },
+      { type: "h3", text: "Fewer wasted impressions" },
+      {
+        type: "p",
+        text:
+          "Use ICP criteria to exclude low-fit segments and reduce spend leakage.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Exclude incompatible industries and maturity stages",
+          "Narrow geography when fit varies by market",
+          "Focus budget on segments with validated LTV",
+        ],
+      },
+      { type: "h3", text: "Better optimisation signals" },
+      {
+        type: "p",
+        text:
+          "Higher conversion quality improves algorithm learning and shortens feedback loops.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Better conversion rate improves optimisation quality",
+          "Faster learning reduces iteration waste",
+          "Cost per qualified acquisition usually declines",
+        ],
+      },
+      { type: "h2", text: "How to translate your ICP into targeting inputs" },
+      {
+        type: "ul",
+        items: [
+          "Define segment variables clearly (industry, stage, use case, urgency)",
+          "Identify a validated high-fit customer list",
+          "Map pains and triggers by segment",
+          "Translate pain and trigger patterns into ad hooks",
+          "Build segment-specific campaigns instead of blended ad sets",
+          "Exclude low-fit signals explicitly",
+          "Measure performance by segment, not just blended totals",
+        ],
+      },
+      { type: "h2", text: "When to use ICP Generator to improve ad performance" },
+      {
+        type: "p",
+        text:
+          "Use ICP Generator as a clarity framework before scaling spend, especially when paid performance stalls.",
+      },
+      {
+        type: "ul",
+        items: [
+          "A clarity tool before budget expansion",
+          "A structured input system for targeting decisions",
+          "A way to align paid media with validated segments",
+          "A way to refine targeting before creative iteration",
+        ],
+      },
+      { type: "h2", text: "Frequently Asked Questions" },
+      { type: "h3", text: "Why do my ads get clicks but no sales?" },
+      {
+        type: "p",
+        text:
+          "Clicks without sales usually indicate message-to-segment mismatch. The audience is interested enough to click but not a strong commercial fit to convert.",
+      },
+      { type: "h3", text: "Should I broaden or narrow targeting?" },
+      {
+        type: "p",
+        text:
+          "Narrow first around validated high-fit segments. Broaden only after conversion quality is stable and segment-level performance is clear.",
+      },
+      { type: "h3", text: "Do lookalike audiences still work?" },
+      {
+        type: "p",
+        text:
+          "Yes, if seed quality is strong. Lookalikes built from validated high-fit customers usually outperform lookalikes built from mixed-quality cohorts.",
+      },
+      { type: "h3", text: "How do I know if my ICP is wrong?" },
+      {
+        type: "p",
+        text:
+          "If cost per acquisition rises, conversion quality falls, sales rejects leads, and retention weakens in paid cohorts, your ICP is likely too broad or misaligned.",
+      },
+      { type: "h3", text: "How long should I test new targeting?" },
+      {
+        type: "p",
+        text:
+          "Run tests long enough to compare qualified conversion by segment. Four to eight weeks often gives directional signal; stronger confidence needs broader cohort data.",
+      },
+      { type: "h2", text: "What is the key takeaway?" },
+      {
+        type: "p",
+        text:
+          "Clear ICP -> cleaner targeting -> higher conversion -> lower wasted spend.",
+      },
+      {
+        type: "p",
+        text:
+          "Paid performance improves when inputs improve. Fix the segment first, then scale the spend.",
+      },
+      { type: "cta" },
     ],
   },
   {
