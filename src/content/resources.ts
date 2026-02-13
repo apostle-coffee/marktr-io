@@ -459,7 +459,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
       "Turn your Ideal Customer Profile (ICP) into clear content ideas, stronger messaging, and higher-performing ads using a practical framework.",
     bgColor: "#96CBB6",
     readingTime: "10 min read",
-    date: "2026-02-13",
+    date: "2026-01-29",
     seoTitle: "How to Turn an ICP Into Better Content and Ads | Practical Marketing Guide",
     metaDescription:
       "Turn your Ideal Customer Profile (ICP) into clear content ideas, stronger messaging, and higher-performing ads using a practical framework.",
@@ -729,7 +729,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
       "Most ICP definitions are hypotheses. This guide shows you how to test them against real commercial performance data.",
     bgColor: "#FF9922",
     readingTime: "11 min read",
-    date: "2026-02-13",
+    date: "2025-10-07",
     seoTitle: "How to Validate an ICP Using Real Customer Data | Metrics & Framework",
     metaDescription:
       "Learn how to validate your Ideal Customer Profile (ICP) using conversion, retention and lifetime value data with a practical framework.",
@@ -1009,7 +1009,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
       "Most marketing problems are not creative problems. They are clarity problems.",
     bgColor: "#FF9922",
     readingTime: "9 min read",
-    date: "2026-02-13",
+    date: "2025-12-22",
     seoTitle: "Why Your Marketing Isn't Converting (And the Simple Fix)",
     metaDescription:
       "If your marketing gets clicks but no conversions, the issue is usually ICP clarity. Learn how to fix targeting misalignment and improve conversion rate.",
@@ -1200,7 +1200,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
       "Most underperforming ad accounts do not have a creative problem. They have a targeting clarity problem.",
     bgColor: "#F57BBE",
     readingTime: "10 min read",
-    date: "2026-02-13",
+    date: "2025-09-26",
     seoTitle: "Stop Wasting Ad Spend | How ICPs Improve Ad Targeting",
     metaDescription:
       "If your ads are underperforming, the issue is usually ICP clarity. Learn how better segment definition improves targeting and reduces wasted spend.",
@@ -1421,7 +1421,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     introLine: "Most marketing problems start with unclear audience definition.",
     bgColor: "#FFD336",
     readingTime: "8 min read",
-    date: "2026-02-13",
+    date: "2025-11-05",
     seoTitle: "Why We Built ICP Generator | Clearer Targeting, Smarter Growth",
     metaDescription:
       "Why we built ICP Generator and how structured Ideal Customer Profile clarity leads to better content, smarter targeting, and faster growth.",
