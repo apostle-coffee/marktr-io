@@ -120,7 +120,7 @@ export default function ResourcePost() {
               {post.title}
             </h1>
             <p className="mt-4 text-text-dark/80 leading-relaxed text-lg">
-              {post.description}
+              {post.introLine ?? post.description}
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-text-dark/90">
               {post.readingTime ? (

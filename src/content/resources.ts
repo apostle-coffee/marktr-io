@@ -2,6 +2,7 @@ export type ResourcePost = {
   slug: string;
   title: string;
   description: string;
+  introLine?: string;
   bgColor: string; // used to match homepage resource cards
   readingTime?: string;
   date?: string; // ISO string
@@ -1003,31 +1004,191 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     slug: "why-your-marketing-isnt-landing",
     title: "Why Your Marketing Isn't Landing (And How to Fix It)",
     description:
-      "If you're struggling to get traction, it's often a sign you're speaking to the wrong crowd - here's the simple fix.",
+      "If your marketing gets clicks but no conversions, the issue is usually ICP clarity. Learn how to fix targeting misalignment and improve conversion rate.",
+    introLine:
+      "Most marketing problems are not creative problems. They are clarity problems.",
     bgColor: "#FF9922",
-    readingTime: "7 min read",
+    readingTime: "9 min read",
     date: "2026-02-13",
+    seoTitle: "Why Your Marketing Isn't Converting (And the Simple Fix)",
+    metaDescription:
+      "If your marketing gets clicks but no conversions, the issue is usually ICP clarity. Learn how to fix targeting misalignment and improve conversion rate.",
+    faq: [
+      {
+        question: "How do I know if my ICP is wrong?",
+        answer:
+          "If traffic grows while conversion rate falls, sales quality declines, and retention is weak in new cohorts, your ICP is likely too broad or mis-specified.",
+      },
+      {
+        question: "Should I change my offer or my audience?",
+        answer:
+          "Test audience clarity first. If segment fit is weak, offer changes may not solve conversion issues. If fit is strong but retention is weak, review offer and onboarding next.",
+      },
+      {
+        question: "Can marketing fail even with a good product?",
+        answer:
+          "Yes. A strong product can still underperform when targeting, positioning, and channel choice are misaligned with the right segment.",
+      },
+      {
+        question: "How specific is too specific?",
+        answer:
+          "Specific is useful when it improves lead quality and conversion without collapsing viable demand. If quality rises while volume remains workable, specificity is helping.",
+      },
+      {
+        question: "How long should I test new messaging?",
+        answer:
+          "Run tests long enough to compare qualified conversion and lead quality by segment. Four to eight weeks often gives directional signal; fuller confidence needs broader cohort data.",
+      },
+    ],
     body: [
+      { type: "h2", text: "Direct Answer Summary" },
       {
         type: "p",
         text:
-          "When your messaging doesn't land, it's rarely a copywriting problem. It's usually a targeting and clarity problem.",
+          "When marketing doesn't convert, it is usually a targeting and clarity problem, not a copywriting problem.",
       },
-      { type: "h2", text: "Common symptoms" },
+      {
+        type: "p",
+        text:
+          "Most traction problems come from ICP mismatch: the message reaches people who are not the best commercial fit, or it is too broad to feel relevant to any one segment.",
+      },
+      {
+        type: "p",
+        text:
+          "Rewriting copy can improve wording, but it rarely fixes root causes. Conversion improves when your Ideal Customer Profile, customer segmentation, and messaging are aligned.",
+      },
+      { type: "h2", text: "Common symptoms your marketing isn't landing" },
       {
         type: "ul",
         items: [
           "You get clicks but no conversions",
-          "People say sounds great but don't take action",
-          "You keep rewriting the website, and nothing changes",
+          "People say sounds great but do not act",
+          "You keep rewriting the website and nothing changes",
+          "Sales says leads are low quality",
+          "Messaging feels generic",
         ],
       },
-      { type: "h2", text: "The fix" },
+      { type: "h2", text: "Why this happens (and why it's rarely a copy problem)" },
       {
         type: "p",
         text:
-          "Tighten your ICP. Then make your headline and first paragraph speak directly to the pains that push them to act.",
+          "Marketing fails when the message is broader than the segment it is trying to reach.",
       },
+      {
+        type: "ul",
+        items: [
+          "Broad ICP definition makes targeting vague",
+          "Positioning is too generic to feel urgent",
+          "One message tries to appeal to multiple segments",
+          "No timing trigger is included in the message",
+          "Channels are misaligned with attention and intent",
+        ],
+      },
+      { type: "h2", text: "The real fix - tighten your ICP" },
+      {
+        type: "p",
+        text:
+          "Specificity improves resonance. Narrow segments convert better because pains, triggers, and decision logic are clearer.",
+      },
+      {
+        type: "p",
+        text:
+          "Your headline should speak to one active pain plus one trigger. Your first paragraph should mirror real frustration in the segment's language.",
+      },
+      {
+        type: "p",
+        text: "Examples:",
+      },
+      {
+        type: "ul",
+        items: [
+          "Weak: We help businesses grow faster. Strong: Struggling to convert traffic into qualified leads despite increasing spend?",
+          "Weak: Improve your marketing performance. Strong: Getting clicks but no sales from your paid campaigns?",
+          "Weak: Better messaging for modern brands. Strong: Still rewriting your homepage while conversion rate stays flat?",
+          "Weak: Scale your SaaS pipeline. Strong: Series A SaaS team with rising CAC and low SQL quality?",
+          "Weak: Grow with smarter strategy. Strong: Need to improve retention before your next board review?",
+        ],
+      },
+      { type: "h2", text: "How to rewrite your headline using ICP clarity" },
+      {
+        type: "p",
+        text: "Use this formula:",
+      },
+      {
+        type: "p",
+        text: "[Specific segment] + [active pain] + [time pressure or trigger]",
+      },
+      {
+        type: "p",
+        text:
+          "Example: Series A SaaS founders struggling with rising churn before your next funding round?",
+      },
+      {
+        type: "ul",
+        items: [
+          "Name one segment only",
+          "Name one current pain",
+          "Add one timing signal",
+          "Remove generic claims",
+        ],
+      },
+      { type: "h2", text: "When to use ICP Generator to fix misalignment" },
+      {
+        type: "p",
+        text:
+          "Use ICP Generator when conversion stalls and teams need a shared diagnostic framework.",
+      },
+      {
+        type: "ul",
+        items: [
+          "Clarify segment definition with structured inputs",
+          "Use one decision framework for targeting choices",
+          "Align sales and marketing on lead quality criteria",
+          "Diagnose where targeting misalignment reduces conversion",
+        ],
+      },
+      {
+        type: "p",
+        text:
+          "It works as a clarity and alignment tool that links customer segmentation to practical execution.",
+      },
+      { type: "h2", text: "Frequently Asked Questions" },
+      { type: "h3", text: "How do I know if my ICP is wrong?" },
+      {
+        type: "p",
+        text:
+          "If traffic rises while conversion rate falls, sales quality declines, and new-customer retention is weak, your ICP is probably too broad or poorly defined.",
+      },
+      { type: "h3", text: "Should I change my offer or my audience?" },
+      {
+        type: "p",
+        text:
+          "Start by testing audience clarity. If segment fit is weak, offer changes will not solve the core issue. If fit is strong but retention is weak, review the offer and onboarding.",
+      },
+      { type: "h3", text: "Can marketing fail even with a good product?" },
+      {
+        type: "p",
+        text:
+          "Yes. A strong product can underperform if targeting, positioning, and channel choice are misaligned with the right segment.",
+      },
+      { type: "h3", text: "How specific is too specific?" },
+      {
+        type: "p",
+        text:
+          "Specificity is useful when it improves lead quality and conversion without eliminating viable demand. If quality rises while volume stays workable, specificity is helping.",
+      },
+      { type: "h3", text: "How long should I test new messaging?" },
+      {
+        type: "p",
+        text:
+          "Run tests long enough to compare qualified conversion and lead quality by segment. Four to eight weeks usually gives directional signal; stronger confidence needs broader cohort data.",
+      },
+      { type: "h2", text: "What is the key takeaway?" },
+      {
+        type: "p",
+        text: "Clarity beats cleverness. Specificity beats breadth. ICP drives resonance.",
+      },
+      { type: "cta" },
     ],
   },
   {
