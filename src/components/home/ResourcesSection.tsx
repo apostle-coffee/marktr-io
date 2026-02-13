@@ -13,7 +13,7 @@ export function ResourcesSection() {
     {
       title: "What Is an Ideal Customer Profile (ICP)?",
       description:
-        "Learn what an Ideal Customer Profile (ICP) is, how to define and validate it, and the common mistakes that weaken growth and product-market fit.",
+        "Learn what an Ideal Customer Profile (ICP) is, how it differs from an ideal customer persona or avatar, and how to define and validate the right segment.",
       bgColor: "#BBA0E5",
       link: "/resources/what-an-icp-really-is",
     },

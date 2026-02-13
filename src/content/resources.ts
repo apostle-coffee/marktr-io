@@ -14,6 +14,7 @@ export type ResourcePost = {
     | { type: "h3"; text: string }
     | { type: "ul"; items: string[] }
     | { type: "links"; items: Array<{ text: string; href: string }> }
+    | { type: "cta" }
     | { type: "callout"; title: string; text: string }
   >;
 };
@@ -28,14 +29,14 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     slug: "what-an-icp-really-is",
     title: "What Is an Ideal Customer Profile (ICP)?",
     description:
-      "Learn what an Ideal Customer Profile (ICP) is, how to define and validate it, and the common mistakes that weaken growth and product-market fit.",
+      "Learn what an Ideal Customer Profile (ICP) is, how it differs from an ideal customer persona or avatar, and how to define and validate the right segment.",
     bgColor: "#BBA0E5",
     readingTime: "9 min read",
     date: "2026-02-13",
     seoTitle:
       "What Is an Ideal Customer Profile (ICP)? Definition, Framework and Validation Guide",
     metaDescription:
-      "Learn what an Ideal Customer Profile (ICP) is, how to define and validate it, and the common mistakes that weaken growth and product-market fit.",
+      "Learn what an Ideal Customer Profile (ICP) is, how it differs from an ideal customer persona or avatar, and how to define and validate the right segment.",
     faq: [
       {
         question: "What is the difference between an ICP and a buyer persona?",
@@ -158,6 +159,48 @@ export const RESOURCE_POSTS: ResourcePost[] = [
           "Tailor messaging to each persona without changing segment focus.",
         ],
       },
+      {
+        type: "h2",
+        text: "Is an Ideal Customer Profile the same as an ideal customer persona or avatar?",
+      },
+      {
+        type: "p",
+        text:
+          "The terms Ideal Customer Profile (ICP), ideal customer persona, and ideal customer avatar are often used interchangeably, but they are not identical.",
+      },
+      {
+        type: "p",
+        text:
+          "An Ideal Customer Profile defines the best-fit customer segment for your business.",
+      },
+      {
+        type: "p",
+        text:
+          "An ideal customer persona focuses on the individual decision-maker within that segment and how they evaluate and purchase solutions.",
+      },
+      {
+        type: "p",
+        text:
+          "An ideal customer avatar is typically a simplified marketing label for a fictionalised representation of your target buyer.",
+      },
+      {
+        type: "p",
+        text: "In practical terms:",
+      },
+      {
+        type: "ul",
+        items: [
+          "ICP = strategic segment definition",
+          "Persona = individual behaviour and decision process",
+          "Avatar = simplified marketing shorthand",
+        ],
+      },
+      {
+        type: "p",
+        text:
+          "For structured growth decisions, defining the ICP first is critical. Personas and avatars are built within that definition, not instead of it.",
+      },
+      { type: "cta" },
       { type: "h2", text: "How do you build an ICP step by step?" },
       { type: "h3", text: "1) What goals are they trying to achieve?" },
       {
@@ -405,6 +448,7 @@ export const RESOURCE_POSTS: ResourcePost[] = [
         text:
           "An ICP is not a demographic profile. It is a practical commercial filter for who to prioritise, how to position, and where to focus growth.",
       },
+      { type: "cta" },
     ],
   },
   {

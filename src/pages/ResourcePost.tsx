@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getResourceBySlug } from "../content/resources";
+import { Button } from "../components/ui/button";
 
 export default function ResourcePost() {
   const { slug } = useParams();
@@ -187,6 +188,23 @@ export default function ResourcePost() {
                       </li>
                     ))}
                   </ul>
+                );
+              }
+              if (block.type === "cta") {
+                return (
+                  <div key={idx} className="mt-10 flex flex-col items-center text-center">
+                    <p className="mb-8 text-lg font-['Inter'] text-foreground/70 font-bold">
+                      Start free and see who your real customers are...
+                    </p>
+                    <div className="flex flex-col gap-3 items-center">
+                      <Button variant="cta" href="/onboarding-build">
+                        Generate Free Now
+                      </Button>
+                      <p className="text-sm text-foreground/60 text-center">
+                        No credit card required
+                      </p>
+                    </div>
+                  </div>
                 );
               }
               if (block.type === "callout") {
