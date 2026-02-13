@@ -1,9 +1,87 @@
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getResourceBySlug } from "../content/resources";
 
 export default function ResourcePost() {
   const { slug } = useParams();
   const post = getResourceBySlug(String(slug || ""));
+
+  useEffect(() => {
+    if (!post) return;
+
+    const siteUrl = "https://icpgenerator.io";
+    const pageUrl = `${siteUrl}/resources/${post.slug}`;
+    const title = post.seoTitle ?? post.title;
+    const description = post.metaDescription ?? post.description;
+
+    document.title = title;
+
+    let meta = document.querySelector(
+      'meta[name="description"]',
+    ) as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "description";
+      document.head.appendChild(meta);
+    }
+    meta.content = description;
+
+    const articleJsonLd = {
+      "@type": "Article",
+      "@id": `${pageUrl}#article`,
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": pageUrl,
+      },
+      headline: title,
+      description,
+      datePublished: post.date ?? "2026-02-13",
+      dateModified: post.date ?? "2026-02-13",
+      inLanguage: "en-GB",
+      author: {
+        "@type": "Organization",
+        name: "ICP Generator",
+      },
+      publisher: {
+        "@type": "Organization",
+        name: "ICP Generator",
+      },
+    };
+
+    const graph: Array<Record<string, unknown>> = [articleJsonLd];
+    if (post.faq?.length) {
+      graph.push({
+        "@type": "FAQPage",
+        "@id": `${pageUrl}#faq`,
+        mainEntity: post.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      });
+    }
+
+    const oldScript = document.getElementById("resource-jsonld");
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "resource-jsonld";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": graph,
+    });
+    document.head.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, [post]);
 
   if (!post) {
     return (
@@ -73,6 +151,16 @@ export default function ResourcePost() {
                   </h2>
                 );
               }
+              if (block.type === "h3") {
+                return (
+                  <h3
+                    key={idx}
+                    className="mt-8 font-['Fraunces'] text-xl sm:text-2xl font-bold"
+                  >
+                    {block.text}
+                  </h3>
+                );
+              }
               if (block.type === "ul") {
                 return (
                   <ul
@@ -81,6 +169,22 @@ export default function ResourcePost() {
                   >
                     {block.items.map((item) => (
                       <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                );
+              }
+              if (block.type === "links") {
+                return (
+                  <ul
+                    key={idx}
+                    className="mt-4 list-disc pl-6 space-y-2 text-foreground/80"
+                  >
+                    {block.items.map((item) => (
+                      <li key={item.href}>
+                        <Link className="underline hover:no-underline" to={item.href}>
+                          {item.text}
+                        </Link>
+                      </li>
                     ))}
                   </ul>
                 );

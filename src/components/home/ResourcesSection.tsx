@@ -11,9 +11,9 @@ interface ResourceCard {
 export function ResourcesSection() {
   const resources: ResourceCard[] = [
     {
-      title: "What an ICP Really Is (and Why Most Brands Get It Wrong)",
+      title: "What Is an Ideal Customer Profile (ICP)?",
       description:
-        "Most founders think they know their audience — until the data says otherwise. Get a simple breakdown of what an Ideal Customer Profile actually is and how to build one that drives real results.",
+        "Learn what an Ideal Customer Profile (ICP) is, how to define and validate it, and the common mistakes that weaken growth and product-market fit.",
       bgColor: "#BBA0E5",
       link: "/resources/what-an-icp-really-is",
     },
