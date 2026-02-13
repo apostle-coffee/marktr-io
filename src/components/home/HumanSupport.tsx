@@ -41,9 +41,12 @@ export function HumanSupport() {
 
           {/* Button */}
           <div className="pt-6">
-            <button className="rounded-design border border-black bg-white px-8 py-3 transition-all hover:scale-105 hover:shadow-lg active:scale-95">
+            <a
+              href="mailto:hello@bullfinchdigital.com"
+              className="inline-flex rounded-design border border-black bg-white px-8 py-3 transition-all hover:scale-105 hover:shadow-lg active:scale-95"
+            >
               Get in touch
-            </button>
+            </a>
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { PaywallProvider } from "./contexts/PaywallContext";
 import { AuthModalProvider } from "./contexts/AuthModalContext";
@@ -27,6 +28,31 @@ import MyBrands from "./pages/MyBrands";
 import BrandEditor from "./pages/BrandEditor";
 import GuestIcpPreview from "./pages/GuestIcpPreview";
 
+const GA_MEASUREMENT_ID = "G-9E3B7RFKGH";
+let lastTrackedPath: string | null = null;
+
+function GA4RouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const pagePath = `${location.pathname}${location.search}${location.hash}`;
+    if (lastTrackedPath === pagePath) return;
+    lastTrackedPath = pagePath;
+
+    const gtag = (window as Window & { gtag?: (...args: unknown[]) => void }).gtag;
+    if (!gtag) return;
+
+    gtag("event", "page_view", {
+      send_to: GA_MEASUREMENT_ID,
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: pagePath,
+    });
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+}
+
 function AuthRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -39,6 +65,7 @@ export default function App() {
       <PaywallProvider>
         <AuthModalProvider>
           <Router>
+            <GA4RouteTracker />
             <div className="min-h-screen bg-background">
               <Routes>
             {/* Public Routes with Header/Footer */}
