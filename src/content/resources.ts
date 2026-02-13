@@ -1418,30 +1418,178 @@ export const RESOURCE_POSTS: ResourcePost[] = [
     title: "Why We Built the ICP Generator (And How It Helps You Win)",
     description:
       "The story behind the tool - and how deeper audience clarity leads to better content, smarter targeting, and faster growth.",
+    introLine: "Most marketing problems start with unclear audience definition.",
     bgColor: "#FFD336",
-    readingTime: "4 min read",
+    readingTime: "8 min read",
     date: "2026-02-13",
+    seoTitle: "Why We Built ICP Generator | Clearer Targeting, Smarter Growth",
+    metaDescription:
+      "Why we built ICP Generator and how structured Ideal Customer Profile clarity leads to better content, smarter targeting, and faster growth.",
+    faq: [
+      {
+        question: "Is ICP Generator only for SaaS?",
+        answer:
+          "No. ICP Generator is useful for SaaS, agencies, consultancies, e-commerce brands, and B2B service teams that need stronger audience clarity and segmentation.",
+      },
+      {
+        question: "Do I need existing data to use it?",
+        answer:
+          "No. You can begin with a structured hypothesis, then improve it with conversion, retention, and revenue data as evidence accumulates.",
+      },
+      {
+        question: "Can agencies use it with clients?",
+        answer:
+          "Yes. Agencies can use ICP Generator to standardise discovery, align messaging strategy, and improve targeting consistency across client campaigns.",
+      },
+      {
+        question: "Is this just another persona tool?",
+        answer:
+          "No. Persona tools often focus on descriptive profiles. ICP Generator focuses on operational decisions tied to commercial fit, customer segmentation, and execution.",
+      },
+      {
+        question: "How long does it take to get clarity?",
+        answer:
+          "Most teams can establish a usable ICP quickly, then strengthen it through validation cycles over subsequent weeks.",
+      },
+    ],
     body: [
+      { type: "h2", text: "Direct Answer Summary" },
       {
         type: "p",
         text:
-          "We built ICP Generator to remove the guesswork. Founders shouldn't have to be marketing people to get a clear audience plan.",
+          "ICP Generator was built to remove guesswork from Ideal Customer Profile definition and turn audience clarity into structured, repeatable decisions.",
       },
-      { type: "h2", text: "What you get out of it" },
+      {
+        type: "p",
+        text:
+          "Founders should not need to become marketing experts to define who they serve best. Audience clarity should be structured, not instinctive.",
+      },
+      {
+        type: "p",
+        text:
+          "When ICP clarity is operational, execution improves everywhere: content becomes sharper, targeting gets cleaner, validation becomes measurable, and growth decisions become more consistent.",
+      },
+      { type: "h2", text: "The problem we kept seeing" },
       {
         type: "ul",
         items: [
-          "A structured ICP you can actually use",
-          "Segments, pains, and messaging angles",
-          "Clear next steps to turn it into marketing",
+          "Founders rewriting websites repeatedly without conversion improvement",
+          "Paid ads underperforming despite frequent creative changes",
+          "Sales rejecting leads as low quality",
+          "Teams disagreeing on who the target audience actually is",
+          "ICP documents existing but not influencing execution",
+        ],
+      },
+      { type: "h2", text: "Why traditional persona exercises fail" },
+      {
+        type: "p",
+        text:
+          "Most persona exercises optimise for storytelling, not commercial performance.",
+      },
+      {
+        type: "ul",
+        items: [
+          "They are too demographic and weak on commercial fit signals",
+          "They are rarely tied to conversion rate, retention, or lifetime value",
+          "They are disconnected from customer segmentation and validation",
+          "They are not integrated into content, targeting, or campaign decisions",
+        ],
+      },
+      { type: "h2", text: "What ICP Generator actually gives you" },
+      { type: "h3", text: "A structured ICP you can actually use" },
+      {
+        type: "p",
+        text:
+          "You get a clear segment definition with commercial variables and decision criteria that teams can apply consistently.",
+      },
+      { type: "h3", text: "Segments, pains, and messaging angles" },
+      {
+        type: "p",
+        text:
+          "You can translate clarity into content and ad execution by mapping real pains, triggers, objections, and segment-specific messaging angles.",
+      },
+      { type: "h3", text: "Clear next steps to turn it into marketing" },
+      {
+        type: "p",
+        text:
+          "The output supports content pillars, ad inputs, segmented campaigns, and a validation loop so ICP clarity drives ongoing optimisation.",
+      },
+      {
+        type: "p",
+        text:
+          "Clarity does not just improve messaging. It improves the entire growth system.",
+      },
+      { type: "h2", text: "How deeper audience clarity helps you win" },
+      {
+        type: "ul",
+        items: [
+          "Better resonance with the right customers",
+          "Higher conversion from clearer message-market fit",
+          "Lower wasted spend through tighter targeting",
+          "Faster learning from cleaner segment signals",
+          "Stronger product-market fit decisions",
+          "Improved marketing and sales alignment",
+        ],
+      },
+      { type: "h2", text: "When ICP Generator is most useful" },
+      {
+        type: "ul",
+        items: [
+          "Early-stage founders without deep marketing background",
+          "Teams scaling paid acquisition",
+          "Companies entering new segments",
+          "Periods where performance stalls",
+          "When marketing feels inconsistent across channels",
         ],
       },
       {
-        type: "callout",
-        title: "Next step",
+        type: "p",
         text:
-          "If your marketing feels inconsistent, start with clarity - everything else becomes easier.",
+          "In these scenarios, ICP Generator works as clarity infrastructure for repeatable growth decisions.",
       },
+      { type: "h2", text: "Frequently Asked Questions" },
+      { type: "h3", text: "Is ICP Generator only for SaaS?" },
+      {
+        type: "p",
+        text:
+          "No. ICP Generator is useful for SaaS, agencies, consultancies, e-commerce brands, and B2B service teams that need stronger audience clarity and segmentation.",
+      },
+      { type: "h3", text: "Do I need existing data to use it?" },
+      {
+        type: "p",
+        text:
+          "No. You can begin with a structured hypothesis, then improve it with conversion, retention, and revenue data as evidence accumulates.",
+      },
+      { type: "h3", text: "Can agencies use it with clients?" },
+      {
+        type: "p",
+        text:
+          "Yes. Agencies can use ICP Generator to standardise discovery, align messaging strategy, and improve targeting consistency across client campaigns.",
+      },
+      { type: "h3", text: "Is this just another persona tool?" },
+      {
+        type: "p",
+        text:
+          "No. Persona tools often focus on descriptive profiles. ICP Generator focuses on operational decisions tied to commercial fit, customer segmentation, and execution.",
+      },
+      { type: "h3", text: "How long does it take to get clarity?" },
+      {
+        type: "p",
+        text:
+          "Most teams can establish a usable ICP quickly, then strengthen it through validation cycles over subsequent weeks.",
+      },
+      { type: "h2", text: "What is the next step?" },
+      {
+        type: "p",
+        text:
+          "If your marketing feels inconsistent, start with clarity. Everything else becomes easier.",
+      },
+      {
+        type: "p",
+        text:
+          "Clarity reduces noise, improves focus, and gives your team a shared foundation for growth decisions.",
+      },
+      { type: "cta" },
     ],
   },
 ];
