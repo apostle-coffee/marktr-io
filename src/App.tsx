@@ -27,6 +27,8 @@ import CheckEmail from "./pages/CheckEmail";
 import MyBrands from "./pages/MyBrands";
 import BrandEditor from "./pages/BrandEditor";
 import GuestIcpPreview from "./pages/GuestIcpPreview";
+import Resources from "./pages/Resources";
+import ResourcePost from "./pages/ResourcePost";
 
 const GA_MEASUREMENT_ID = "G-9E3B7RFKGH";
 let lastTrackedPath: string | null = null;
@@ -81,6 +83,22 @@ export default function App() {
               <>
                 <Header />
                 <Pricing />
+                <Footer />
+              </>
+            } />
+
+            <Route path="/resources" element={
+              <>
+                <Header />
+                <Resources />
+                <Footer />
+              </>
+            } />
+
+            <Route path="/resources/:slug" element={
+              <>
+                <Header />
+                <ResourcePost />
                 <Footer />
               </>
             } />

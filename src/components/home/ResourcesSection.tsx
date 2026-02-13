@@ -15,35 +15,35 @@ export function ResourcesSection() {
       description:
         "Most founders think they know their audience — until the data says otherwise. Get a simple breakdown of what an Ideal Customer Profile actually is and how to build one that drives real results.",
       bgColor: "#BBA0E5",
-      link: "#",
+      link: "/resources/what-an-icp-really-is",
     },
     {
       title: "How to Turn an ICP Into Better Content and Ads",
       description:
         "Learn how to transform your ICP into ready-to-use content ideas, stronger messaging, and higher-performing ads. A practical guide to creating marketing your customers actually respond to.",
       bgColor: "#96CBB6",
-      link: "#",
+      link: "/resources/turn-an-icp-into-better-content-and-ads",
     },
     {
       title: "Why Your Marketing Isn't Landing (And How to Fix It)",
       description:
         "Struggling to get traction? It's often a sign you're speaking to the wrong crowd. Discover the key mistakes founders make when defining their audience — and the simple way to fix them.",
       bgColor: "#FF9922",
-      link: "#",
+      link: "/resources/why-your-marketing-isnt-landing",
     },
     {
       title: "Stop Wasting Ad Spend: How ICPs Improve Targeting",
       description:
         "If you're reaching the wrong people, your ads will always underperform. Learn how ICP-driven insights create more accurate Meta Audiences and help you get more from every pound spent.",
       bgColor: "#F57BBE",
-      link: "#",
+      link: "/resources/stop-wasting-ad-spend",
     },
     {
       title: "Why We Built the ICP Generator (And How It Helps You Win)",
       description:
         "The story behind the tool — and the problem it was designed to solve. See how knowing your audience more deeply leads to better content, smarter targeting, and faster growth.",
       bgColor: "#FFD336",
-      link: "#",
+      link: "/resources/why-we-built-icp-generator",
     },
   ];
 

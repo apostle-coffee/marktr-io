@@ -50,9 +50,9 @@ export function Header() {
       color: "#96CBB6" // Mint green
     },
     { 
-      label: "Resources", 
-      type: "scroll" as const, 
-      target: "resources",
+      label: "Resources",
+      type: "link" as const,
+      target: "/resources",
       color: "#FF9922" // Orange
     },
     { 
