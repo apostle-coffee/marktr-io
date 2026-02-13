@@ -151,3 +151,17 @@ npm run preview
 - All "Generate Free Now" buttons link to `/onboarding-build`
 - Dark mode persists across page refreshes
 - Header and Footer only show on `/` and `/pricing` routes
+
+## Local Git Hook: Block `dist/` Commits
+
+This repo uses a local Git pre-commit hook at `.git/hooks/pre-commit` to prevent committing build output.
+
+Hook check:
+
+```sh
+git diff --cached --name-only | rg '^dist/'
+```
+
+If any staged path is under `dist/`, commit is blocked with:
+
+`Build output (dist/) must not be committed.`
