@@ -25,24 +25,31 @@ export function ResourcesSection() {
       link: "/resources/turn-an-icp-into-better-content-and-ads",
     },
     {
+      title: "How to Validate an Ideal Customer Profile (ICP) Using Real Data",
+      description:
+        "Most ICP definitions are hypotheses. Learn how to test yours against conversion, retention, lifetime value, and expansion signals.",
+      bgColor: "#FF9922",
+      link: "/resources/how-to-validate-an-icp",
+    },
+    {
       title: "Why Your Marketing Isn't Landing (And How to Fix It)",
       description:
         "Struggling to get traction? It's often a sign you're speaking to the wrong crowd. Discover the key mistakes founders make when defining their audience — and the simple way to fix them.",
-      bgColor: "#FF9922",
+      bgColor: "#F57BBE",
       link: "/resources/why-your-marketing-isnt-landing",
     },
     {
       title: "Stop Wasting Ad Spend: How ICPs Improve Targeting",
       description:
         "If you're reaching the wrong people, your ads will always underperform. Learn how ICP-driven insights create more accurate Meta Audiences and help you get more from every pound spent.",
-      bgColor: "#F57BBE",
+      bgColor: "#FFD336",
       link: "/resources/stop-wasting-ad-spend",
     },
     {
       title: "Why We Built the ICP Generator (And How It Helps You Win)",
       description:
         "The story behind the tool — and the problem it was designed to solve. See how knowing your audience more deeply leads to better content, smarter targeting, and faster growth.",
-      bgColor: "#FFD336",
+      bgColor: "#BBA0E5",
       link: "/resources/why-we-built-icp-generator",
     },
   ];
