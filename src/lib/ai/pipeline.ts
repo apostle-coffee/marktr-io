@@ -1,11 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { setLastGenerated } from "./generatedStore";
-import {
-  AVATAR_COUNT,
-  buildAvatarKey,
-  type AvatarAgeRange,
-  type AvatarGender,
-} from "../../utils/avatarLibrary";
+import { type AvatarAgeRange, type AvatarGender } from "../../utils/avatarLibrary";
 
 export type GenerateICPsInput = {
   name: string;
@@ -118,6 +113,57 @@ function hashString(input: string) {
   return Math.abs(h);
 }
 
+const AVAILABLE_AVATARS: Record<AvatarGender, Partial<Record<AvatarAgeRange, string[]>>> = {
+  female: {
+    "18-24": [
+      "female/18-24/female_18-24_001.png",
+      "female/18-24/female_18-24_003.png",
+      "female/18-24/female_18-24_006.png",
+      "female/18-24/female_18-24_009.png",
+    ],
+    "25-34": [
+      "female/25-34/female_25-34_002.png",
+      "female/25-34/female_25-34_006.png",
+      "female/25-34/female_25-34_009.png",
+      "female/25-34/female_25-34_013.png",
+    ],
+    "35-44": [
+      "female/35-44/female_35-44_002.png",
+      "female/35-44/female_35-44_004.png",
+    ],
+    "45-54": [
+      "female/45-54/female_45-54_001.png",
+      "female/45-54/female_45-54_002.png",
+    ],
+    "55-64": [
+      "female/55-64/female_55-64_001.png",
+      "female/55-64/female_55-64_002.png",
+    ],
+    "65+": [
+      "female/65+/female_64+_001.png",
+      "female/65+/female_64+_002.png",
+    ],
+  },
+  male: {
+    "18-24": [
+      "male/18-24/male_18-24_001.png",
+      "male/18-24/male_18-24_002.png",
+    ],
+    "25-34": [
+      "male/25-34/male_25-34_001.png",
+    ],
+    "35-44": [
+      "male/35-44/male_35-44_001.png",
+    ],
+    "45-54": [
+      "male/45-54/male_45-54_002.png",
+    ],
+    "55-64": [],
+    "65+": [],
+  },
+  non_binary: {},
+};
+
 function inferAvatarMeta(icp: ReturnType<typeof normalise>, index: number): { gender: AvatarGender; ageRange: AvatarAgeRange } {
   const text = [
     icp.name || "",
@@ -150,12 +196,15 @@ function assignAvatars(icps: Array<ReturnType<typeof normalise>>) {
   const used = new Set<string>();
   return icps.map((icp, index) => {
     const { gender, ageRange } = inferAvatarMeta(icp, index);
-    const max = AVATAR_COUNT[gender]?.[ageRange] || 1;
-    const base = hashString(`${icp.name}-${icp.description}-${index}`) % max;
+    const primaryPool = AVAILABLE_AVATARS[gender]?.[ageRange] || [];
+    const femaleFallbackPool = AVAILABLE_AVATARS.female["25-34"] || [];
+    const pool = primaryPool.length ? primaryPool : femaleFallbackPool;
 
-    let avatarKey = buildAvatarKey(gender, ageRange, base + 1);
-    for (let i = 0; i < max && used.has(avatarKey); i += 1) {
-      avatarKey = buildAvatarKey(gender, ageRange, ((base + i + 1) % max) + 1);
+    const base = hashString(`${icp.name}-${icp.description}-${index}`) % pool.length;
+
+    let avatarKey = pool[base];
+    for (let i = 0; i < pool.length && used.has(avatarKey); i += 1) {
+      avatarKey = pool[(base + i + 1) % pool.length];
     }
     used.add(avatarKey);
 

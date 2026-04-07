@@ -478,6 +478,7 @@ export default function OnboardingBuild() {
       setLastGenerated(result.icps || []);
     }
 
+    navigate("/icp-results", { state: { unsavedPreview: unsavedPreviewRef.current } });
     console.log("[Onboarding] runIcpGeneration complete");
   }, [
     formData,
@@ -485,7 +486,8 @@ export default function OnboardingBuild() {
     icpsLoading,
     subscriptionLoading,
     user?.id,
-    ensureBrandForAuthenticatedOnboarding
+    ensureBrandForAuthenticatedOnboarding,
+    navigate
   ]);
 
   const renderScreen = () => {
