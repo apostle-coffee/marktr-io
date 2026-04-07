@@ -1,5 +1,11 @@
 import { supabase } from "../../config/supabase";
 import { setLastGenerated } from "./generatedStore";
+import {
+  AVATAR_COUNT,
+  buildAvatarKey,
+  type AvatarAgeRange,
+  type AvatarGender,
+} from "../../utils/avatarLibrary";
 
 export type GenerateICPsInput = {
   name: string;
@@ -27,6 +33,9 @@ export type GeneratedICP = {
   tech_stack?: string[];
   challenges?: string[];
   opportunities?: string[];
+  avatar_key?: string;
+  avatar_gender?: AvatarGender;
+  avatar_age_range?: AvatarAgeRange;
 };
 
 export type GenerateICPsResult = { icps: GeneratedICP[] };
@@ -94,7 +103,69 @@ function normalise(icp: GeneratedICP) {
     tech_stack: Array.isArray(icp.tech_stack) ? icp.tech_stack : [],
     challenges: Array.isArray(icp.challenges) ? icp.challenges : [],
     opportunities: Array.isArray(icp.opportunities) ? icp.opportunities : [],
+    avatar_key: icp.avatar_key,
+    avatar_gender: icp.avatar_gender,
+    avatar_age_range: icp.avatar_age_range,
   };
+}
+
+function hashString(input: string) {
+  let h = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    h = (h << 5) - h + input.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+
+function inferAvatarMeta(icp: ReturnType<typeof normalise>, index: number): { gender: AvatarGender; ageRange: AvatarAgeRange } {
+  const text = [
+    icp.name || "",
+    icp.description || "",
+    ...(icp.decision_makers || []),
+    ...(icp.goals || []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  const maleSignals = /(father|dad|male|man|gentleman|husband|he\b|him\b|his\b)/;
+  const femaleSignals = /(mother|mom|mum|female|woman|wife|she\b|her\b)/;
+  const seniorSignals = /(retire|retired|senior|pension|older|grandparent|65\+|over 60)/;
+  const matureSignals = /(director|head of|manager|owner|founder|executive|lead)/;
+  const youngSignals = /(student|undergrad|graduate|entry-level|early career|young professional|gen z|18-24)/;
+
+  let gender: AvatarGender = index % 2 === 0 ? "female" : "male";
+  if (maleSignals.test(text) && !femaleSignals.test(text)) gender = "male";
+  if (femaleSignals.test(text) && !maleSignals.test(text)) gender = "female";
+
+  let ageRange: AvatarAgeRange = "25-34";
+  if (seniorSignals.test(text)) ageRange = "55-64";
+  else if (matureSignals.test(text)) ageRange = "35-44";
+  else if (youngSignals.test(text)) ageRange = "18-24";
+
+  return { gender, ageRange };
+}
+
+function assignAvatars(icps: Array<ReturnType<typeof normalise>>) {
+  const used = new Set<string>();
+  return icps.map((icp, index) => {
+    const { gender, ageRange } = inferAvatarMeta(icp, index);
+    const max = AVATAR_COUNT[gender]?.[ageRange] || 1;
+    const base = hashString(`${icp.name}-${icp.description}-${index}`) % max;
+
+    let avatarKey = buildAvatarKey(gender, ageRange, base + 1);
+    for (let i = 0; i < max && used.has(avatarKey); i += 1) {
+      avatarKey = buildAvatarKey(gender, ageRange, ((base + i + 1) % max) + 1);
+    }
+    used.add(avatarKey);
+
+    return {
+      ...icp,
+      avatar_key: avatarKey,
+      avatar_gender: gender,
+      avatar_age_range: ageRange,
+    };
+  });
 }
 
 /**
@@ -141,7 +212,7 @@ export async function generateICPs(input: GenerateICPsInput): Promise<GenerateIC
     );
   }
 
-  const icps = (data?.icps || []).map(normalise);
+  const icps = assignAvatars((data?.icps || []).map(normalise));
   if (!icps.length) {
     throw new Error("generate-icps returned no icps.");
   }

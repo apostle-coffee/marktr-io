@@ -26,13 +26,11 @@ const loadingStages = [
   "Finalizing your Ideal Customer Profile...",
 ];
 
-const dataPoints = [
-  { label: "Assessing challenges", delay: 0.5 },
-  { label: "Searching professions", delay: 1.2 },
-  { label: "Mapping motivations", delay: 1.8 },
-  { label: "Analyzing behaviors", delay: 2.3 },
-  { label: "Identifying goals", delay: 3.0 },
-  { label: "Evaluating preferences", delay: 3.5 },
+const maleLoadingAvatars = [
+  "/images/avatars/male/18-24/male_18-24_002.png",
+  "/images/avatars/male/25-34/male_25-34_001.png",
+  "/images/avatars/male/35-44/male_35-44_001.png",
+  "/images/avatars/male/45-54/male_45-54_002.png",
 ];
 
 export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
@@ -49,9 +47,15 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
   const mountedRef = useRef(true);
 
   const avatarLibrary = getAllProfileImages();
-  const avatars = avatarLibrary.length
-    ? avatarLibrary
-    : ["/images/profiles/ld1.png"];
+  const avatars = Array.from(
+    new Set(
+      [
+        ...avatarLibrary,
+        ...maleLoadingAvatars,
+      ].filter(Boolean)
+    )
+  );
+  const fallbackAvatar = "/images/profiles/ld1.png";
 
   useEffect(() => {
     mountedRef.current = true;
@@ -75,6 +79,17 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
       }
     };
   }, []);
+
+  const pickNextAvatarIndex = (prev: number) => {
+    if (avatars.length <= 1) return 0;
+    let next = prev;
+    let guard = 0;
+    while (next === prev && guard < 8) {
+      next = Math.floor(Math.random() * avatars.length);
+      guard += 1;
+    }
+    return next;
+  };
 
   useEffect(() => {
     const hasJob = Boolean(run || runJob);
@@ -128,10 +143,7 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
     if (jobDone) return;
     avatarIntervalRef.current = window.setInterval(() => {
       if (!mountedRef.current) return;
-      setCurrentAvatarIndex((prev) => {
-        if (avatars.length <= 1) return 0;
-        return (prev + 1) % avatars.length;
-      });
+      setCurrentAvatarIndex((prev) => pickNextAvatarIndex(prev));
     }, 1200);
 
     return () => {
@@ -166,6 +178,13 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
           window.clearInterval(progressIntervalRef.current);
           progressIntervalRef.current = null;
         }
+        if (onComplete) {
+          if (completionTimeoutRef.current !== null) {
+            window.clearTimeout(completionTimeoutRef.current);
+          }
+          // Exit immediately once generation is ready.
+          completionTimeoutRef.current = window.setTimeout(onComplete, 100);
+        }
       } catch (e: any) {
         if (cancelled || !mountedRef.current) return;
         console.error("[LoadingScreen] run failed", e);
@@ -177,7 +196,7 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
     return () => {
       cancelled = true;
     };
-  }, [run, runJob]);
+  }, [run, runJob, onComplete]);
 
   useEffect(() => {
     const job = run || runJob;
@@ -256,9 +275,9 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            {avatars.length > 0 && (
+            {(avatars.length > 0 || fallbackAvatar) && (
               <img
-                src={avatars[currentAvatarIndex]}
+                src={avatars[currentAvatarIndex] || fallbackAvatar}
                 alt="ICP avatar"
                 className="w-full h-full object-cover"
               />
@@ -288,48 +307,6 @@ export function LoadingScreen({ onComplete, run, runJob }: LoadingScreenProps) {
             />
           </motion.div>
 
-          <motion.div
-            className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full border-2 border-gray-200 shadow-md"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-          >
-            <span className="text-sm font-medium font-['Inter']">
-              ICP Portrait
-            </span>
-          </motion.div>
-
-          {dataPoints.map((point, index) => {
-            const angle = (index * Math.PI * 2) / dataPoints.length;
-            const radius = 200;
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-
-            return (
-              <motion.div
-                key={point.label}
-                className="absolute bg-green-50 border border-green-200 px-3 py-1.5 rounded-full shadow-md text-sm whitespace-nowrap font-['Inter']"
-                style={{
-                  left: "50%",
-                  top: "50%",
-                }}
-                initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-                animate={{
-                  opacity: [0, 1, 1],
-                  scale: [0, 1.1, 1],
-                  x: x,
-                  y: y,
-                }}
-                transition={{
-                  duration: 0.6,
-                  delay: point.delay,
-                  ease: "easeOut",
-                }}
-              >
-                {point.label}
-              </motion.div>
-            );
-          })}
         </div>
 
         <div className="flex gap-2">

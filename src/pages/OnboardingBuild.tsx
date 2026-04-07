@@ -76,6 +76,7 @@ export default function OnboardingBuild() {
   const [currentStep, setCurrentStep] = useState<Step>("1_Welcome");
   const hasRunRef = useRef(false);
   const hasPersistedRef = useRef(false);
+  const unsavedPreviewRef = useRef(false);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     brandName: "",
@@ -136,6 +137,7 @@ export default function OnboardingBuild() {
     if (currentStep === "10_Loading") {
       hasRunRef.current = false;
       hasPersistedRef.current = false;
+      unsavedPreviewRef.current = false;
       console.debug("[Onboarding] reset hasRunRef for Loading step");
     }
   }, [currentStep]);
@@ -149,7 +151,7 @@ export default function OnboardingBuild() {
 
   const handleLoadingComplete = () => {
     // Navigate to dedicated ICP Results page after loading
-    navigate('/icp-results');
+    navigate("/icp-results", { state: { unsavedPreview: unsavedPreviewRef.current } });
   };
 
   // Only evaluate create limits once BOTH subscription + ICPs have finished loading.
@@ -344,6 +346,7 @@ export default function OnboardingBuild() {
       !subscriptionLoading &&
       Array.isArray(result.icps) &&
       result.icps.length > 0;
+    unsavedPreviewRef.current = !canSave;
 
     if (canSave) {
       const expectedCount = Array.isArray(result.icps) ? result.icps.length : 0;
@@ -475,7 +478,6 @@ export default function OnboardingBuild() {
       setLastGenerated(result.icps || []);
     }
 
-    navigate("/icp-results", { state: { unsavedPreview: !canSave } });
     console.log("[Onboarding] runIcpGeneration complete");
   }, [
     formData,
@@ -483,8 +485,7 @@ export default function OnboardingBuild() {
     icpsLoading,
     subscriptionLoading,
     user?.id,
-    ensureBrandForAuthenticatedOnboarding,
-    navigate
+    ensureBrandForAuthenticatedOnboarding
   ]);
 
   const renderScreen = () => {
