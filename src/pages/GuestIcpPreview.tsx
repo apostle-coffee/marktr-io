@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Lock } from "lucide-react";
 import DashboardShell from "../layouts/DashboardShell";
 import { useAuth } from "../contexts/AuthContext";
 import { getGuestICPs } from "../lib/guestICP";
@@ -7,12 +8,14 @@ import { getGuestBrandSeed } from "../lib/guestBrandSeed";
 import { Button } from "../components/ui/button";
 import { ICPProfileLayout } from "../components/icp/ICPProfileLayout";
 import { usePaywall } from "../contexts/PaywallContext";
+import useSubscription from "@/hooks/useSubscription";
 
 export default function GuestIcpPreview() {
   const { index } = useParams<{ index: string }>();
   const navigate = useNavigate();
   const { openPaywall } = usePaywall();
   const { user } = useAuth();
+  const { effectiveTier } = useSubscription();
 
   // Redirect authenticated users to the real dashboard.
   useEffect(() => {
@@ -145,25 +148,65 @@ export default function GuestIcpPreview() {
             <DetailList label="Pain Points" items={(icp as any).pain_points ?? icp.painPoints} />
             <DetailList label="Decision Makers" items={(icp as any).decision_makers ?? icp.decisionMakers} />
             <DetailList label="Tech Stack" items={(icp as any).tech_stack ?? icp.techStack} />
+
+            <div className="bg-background border border-black rounded-design p-6 shadow-md mt-6">
+              <h3 className="font-['Fraunces'] text-xl mb-2">Marketing Strategy</h3>
+
+              <div className="relative">
+                <div className="space-y-4 blur-sm pointer-events-none select-none">
+                  <div className="border border-black rounded-design p-4 bg-white">
+                    <h4 className="font-['Fraunces'] text-lg mb-2">Positioning</h4>
+                    <p className="text-sm font-['Inter'] text-foreground/80">
+                      Your ICP positioning, messaging and differentiators will appear here.
+                    </p>
+                  </div>
+
+                  <div className="border border-black rounded-design p-4 bg-white">
+                    <h4 className="font-['Fraunces'] text-lg mb-2">Campaign Ideas</h4>
+                    <p className="text-sm font-['Inter'] text-foreground/80">
+                      Ready-to-use campaign hooks, angles and CTAs tailored to this ICP.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                  <h4 className="font-['Fraunces'] text-lg mb-2">
+                    Unlock your marketing strategy
+                  </h4>
+                  <p className="text-sm font-['Inter'] text-foreground/70 mb-4 max-w-sm">
+                    Generate positioning, messaging, campaigns and ad ideas tailored to this ICP.
+                  </p>
+                  <Button
+                    className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-6 py-3"
+                    onClick={() => openPaywall()}
+                  >
+                    Start your FREE 7-day trial
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         }
         footerCta={
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="font-['Fraunces'] text-xl">Want to edit this ICP?</h3>
-              <p className="font-['Inter'] text-sm text-foreground/70">
-                Sign up to edit, save and unlock marketing insights.
-              </p>
+          effectiveTier === "free" ? (
+            <div className="text-center animate-fade-in-up">
+              <div className="bg-gradient-to-br from-[#FFD336]/20 to-[#FF9922]/20 rounded-design p-8">
+                <Lock className="w-8 h-8 mx-auto mb-4 text-foreground/60" />
+                <h3 className="font-['Fraunces'] text-xl mb-3">
+                  Unlock full editing & exports
+                </h3>
+                <p className="font-['Inter'] text-foreground/70 mb-6 max-w-md mx-auto">
+                  Upgrade to edit all sections, generate marketing strategies, and export to PDF/JSON.
+                </p>
+                <Button
+                  className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"
+                  onClick={() => openPaywall()}
+                >
+                  Start your FREE 7-day trial
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-4 py-2"
-                onClick={() => openPaywall()}
-              >
-                Start 7-day free trial
-              </Button>
-            </div>
-          </div>
+          ) : null
         }
       />
     </DashboardShell>
