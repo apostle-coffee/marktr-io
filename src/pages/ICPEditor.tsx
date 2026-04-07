@@ -59,6 +59,7 @@ export default function ICPEditor() {
   } = useICPStrategy(id);
   // Treat trial users as "pro" for export gating.
   const effectiveTier = userTier === "free" && !trialActive ? "free" : "pro";
+  const isFreeTier = effectiveTier === "free";
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [brandSaveStatus, setBrandSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -195,6 +196,10 @@ export default function ICPEditor() {
 
   const handleSave = useCallback(async (): Promise<boolean> => {
     if (!id) return false;
+    if (isFreeTier) {
+      openPaywall();
+      return false;
+    }
     setIsSaving(true);
     setSaveStatus("saving");
     
@@ -227,7 +232,7 @@ export default function ICPEditor() {
     setTimeout(() => setSaveStatus("idle"), 3000);
     setIsSaving(false);
     return true;
-  }, [id, icpData, updateICP]);
+  }, [id, icpData, updateICP, isFreeTier, openPaywall]);
 
   const performPendingNavigation = (path: string | null) => {
     if (!path) return;
@@ -256,8 +261,8 @@ export default function ICPEditor() {
 
   const handleExport = () => {
     if (!id) return;
-    if (effectiveTier === "free") {
-      alert("Upgrade to unlock exports");
+    if (isFreeTier) {
+      openPaywall();
       return;
     }
     const exportIndex = (icpData as any)?._index ?? 0;
@@ -277,6 +282,10 @@ export default function ICPEditor() {
 
   const handleBrandChange = async (nextBrandIdRaw: string) => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
 
     // HTML select gives "" for empty option
     const nextBrandId = nextBrandIdRaw ? nextBrandIdRaw : null;
@@ -305,6 +314,10 @@ export default function ICPEditor() {
 
   const handleDuplicate = async () => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
     try {
       const created = await duplicateICP(id);
       if (created?.id) {
@@ -320,6 +333,10 @@ export default function ICPEditor() {
 
   const handleDelete = async () => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
     const ok = window.confirm("Are you sure you want to delete this ICP? This action cannot be undone.");
     if (!ok) return;
     try {
@@ -336,6 +353,10 @@ export default function ICPEditor() {
 
   const handleOpenColorModal = () => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
     setIcpColorModal({
       open: true,
       id,
@@ -345,6 +366,10 @@ export default function ICPEditor() {
 
   const handleOpenAvatarModal = () => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
     setIcpAvatarModal({
       open: true,
       id,
@@ -356,6 +381,10 @@ export default function ICPEditor() {
 
   const handleSaveMoveBrand = async () => {
     if (!id) return;
+    if (isFreeTier) {
+      openPaywall();
+      return;
+    }
     const ok = await updateICP(id, { brand_id: moveBrandId ?? null } as any);
     if (!ok) return;
 
@@ -701,7 +730,7 @@ export default function ICPEditor() {
                 value={currentBrandId ?? ""}
                 onChange={(e) => handleBrandChange(e.target.value)}
                 className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
-                disabled={brandsLoading || brandSaveStatus === "saving"}
+                disabled={isFreeTier || brandsLoading || brandSaveStatus === "saving"}
               >
                 <option value="">
                   {brandsLoading ? "Loading brands…" : "No brand allocated"}
@@ -851,6 +880,7 @@ export default function ICPEditor() {
                     type="text"
                     value={icpData.name || ""}
                     onChange={(e) => setICPData({ ...icpData, name: e.target.value })}
+                    disabled={isFreeTier}
                     placeholder="ICP Name"
                     className="font-['Fraunces'] text-2xl border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -861,6 +891,7 @@ export default function ICPEditor() {
                   <Textarea
                     value={icpData.description || ""}
                     onChange={(e) => setICPData({ ...icpData, description: e.target.value })}
+                    disabled={isFreeTier}
                     placeholder="Description"
                     className="font-['Inter'] text-sm border-none bg-transparent p-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                     rows={3}
@@ -876,6 +907,7 @@ export default function ICPEditor() {
                     type="text"
                     value={icpData.industry || ""}
                     onChange={(e) => setICPData({ ...icpData, industry: e.target.value })}
+                    disabled={isFreeTier}
                     placeholder="Industry"
                     className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -887,6 +919,7 @@ export default function ICPEditor() {
                     type="text"
                     value={icpData.company_size || ""}
                     onChange={(e) => setICPData({ ...icpData, company_size: e.target.value })}
+                    disabled={isFreeTier}
                     placeholder="Company Size"
                     className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -898,6 +931,7 @@ export default function ICPEditor() {
                     type="text"
                     value={icpData.location || ""}
                     onChange={(e) => setICPData({ ...icpData, location: e.target.value })}
+                    disabled={isFreeTier}
                     placeholder="Location"
                     className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -911,6 +945,7 @@ export default function ICPEditor() {
                   type="text"
                   value={icpData.budget || ""}
                   onChange={(e) => setICPData({ ...icpData, budget: e.target.value })}
+                  disabled={isFreeTier}
                   placeholder="Budget"
                   className="font-['Inter'] text-sm border-none bg-transparent p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
@@ -924,6 +959,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Goals & Motivations"
                   items={icpData.goals || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, goals: items })}
                 />
               </div>
@@ -933,6 +969,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Pain Points"
                   items={icpData.pain_points || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, pain_points: items })}
                 />
               </div>
@@ -942,6 +979,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Decision Makers"
                   items={icpData.decision_makers || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, decision_makers: items })}
                 />
               </div>
@@ -951,6 +989,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Digital Tools & Platforms"
                   items={icpData.tech_stack || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, tech_stack: items })}
                 />
               </div>
@@ -960,6 +999,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Challenges"
                   items={icpData.challenges || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, challenges: items })}
                 />
               </div>
@@ -969,6 +1009,7 @@ export default function ICPEditor() {
                 <EditableListSection
                   title="Opportunities"
                   items={icpData.opportunities || []}
+                  isLocked={isFreeTier}
                   onChange={(items) => setICPData({ ...icpData, opportunities: items })}
                 />
               </div>
@@ -976,7 +1017,40 @@ export default function ICPEditor() {
               {/* Marketing Strategy */}
               <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-[400ms]">
                 <h3 className="font-['Fraunces'] text-xl mb-2">Marketing Strategy</h3>
-                {strategyLoading ? (
+                {isFreeTier ? (
+                  <div className="relative">
+                    <div className="space-y-4 blur-sm pointer-events-none select-none">
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Positioning</h4>
+                        <p className="text-sm font-['Inter'] text-foreground/80">
+                          Your ICP positioning, messaging and differentiators will appear here.
+                        </p>
+                      </div>
+
+                      <div className="border border-black rounded-design p-4 bg-white">
+                        <h4 className="font-['Fraunces'] text-lg mb-2">Campaign Ideas</h4>
+                        <p className="text-sm font-['Inter'] text-foreground/80">
+                          Ready-to-use campaign hooks, angles and CTAs tailored to this ICP.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                      <h4 className="font-['Fraunces'] text-lg mb-2">
+                        Unlock your marketing strategy
+                      </h4>
+                      <p className="text-sm font-['Inter'] text-foreground/70 mb-4 max-w-sm">
+                        Generate positioning, messaging, campaigns and ad ideas tailored to this ICP.
+                      </p>
+                      <Button
+                        className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-6 py-3"
+                        onClick={() => openPaywall()}
+                      >
+                        Start your FREE 7-day trial
+                      </Button>
+                    </div>
+                  </div>
+                ) : strategyLoading ? (
                   <p className="text-sm text-foreground/60 font-['Inter']">Loading strategy…</p>
                 ) : strategy ? (
                   <div className="space-y-4">
@@ -1216,7 +1290,7 @@ export default function ICPEditor() {
                   Unlock full editing & exports
                 </h3>
                 <p className="font-['Inter'] text-foreground/70 mb-6 max-w-md mx-auto">
-                  Upgrade to edit all sections, export to PDF/JSON, and unlock advanced features.
+                  Upgrade to edit all sections, export to PDF, and unlock advanced features.
                 </p>
                 <Button
                   className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"

@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="border-t border-accent-grey bg-neutral-light py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="col-span-1">
             <h3 className="font-fraunces text-xl font-bold text-text-dark mb-4">
@@ -40,36 +40,19 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Company */}
-          <div>
-            <h4 className="font-inter font-semibold text-text-dark mb-4">Company</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/account" className="text-text-dark/80 hover:text-button-green transition-colors">
-                  Account
-                </Link>
-              </li>
-              <li>
-                <Link to="/team" className="text-text-dark/80 hover:text-button-green transition-colors">
-                  Team
-                </Link>
-              </li>
-            </ul>
-          </div>
-
           {/* Legal */}
           <div>
             <h4 className="font-inter font-semibold text-text-dark mb-4">Legal</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="#" className="text-text-dark/80 hover:text-button-green transition-colors">
+                <Link to="/privacy-policy" className="text-text-dark/80 hover:text-button-green transition-colors">
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-text-dark/80 hover:text-button-green transition-colors">
+                <Link to="/terms-of-service" className="text-text-dark/80 hover:text-button-green transition-colors">
                   Terms of Service
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

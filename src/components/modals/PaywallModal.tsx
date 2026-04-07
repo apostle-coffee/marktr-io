@@ -263,11 +263,11 @@ export function PaywallModal({
           {/* Footer Links */}
           <div className="mt-6 pt-6 border-t border-warm-grey">
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <a href="#" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
+              <a href="/terms-of-service" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
                 Terms of Service
               </a>
               <span className="text-foreground/30">•</span>
-              <a href="#" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
+              <a href="/privacy-policy" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
                 Privacy Policy
               </a>
               <span className="text-foreground/30">•</span>

@@ -47,16 +47,16 @@ export default function GuestIcpPreview() {
   }, [guestBrand.id, guestBrand.name]);
 
   const targetIndex = Number.isFinite(Number(index)) ? Number(index) : 0;
+  const maxPreviewIndex = Math.max(0, Math.min(2, guestICPs.length - 1));
+  const resolvedIndex = Math.max(0, Math.min(targetIndex, maxPreviewIndex));
 
   useEffect(() => {
-    // Only first ICP is viewable; anything else shows the modal + redirects to the first.
-    if (targetIndex > 0) {
-      openPaywall();
-      navigate("/icp-preview/0", { replace: true });
+    if (targetIndex !== resolvedIndex) {
+      navigate(`/icp-preview/${resolvedIndex}`, { replace: true });
     }
-  }, [targetIndex, navigate, openPaywall]);
+  }, [targetIndex, resolvedIndex, navigate]);
 
-  const icp = guestICPs[0];
+  const icp = guestICPs[resolvedIndex];
 
   if (!icp) {
     return (
@@ -196,7 +196,7 @@ export default function GuestIcpPreview() {
                   Unlock full editing & exports
                 </h3>
                 <p className="font-['Inter'] text-foreground/70 mb-6 max-w-md mx-auto">
-                  Upgrade to edit all sections, generate marketing strategies, and export to PDF/JSON.
+                  Upgrade to edit all sections, generate marketing strategies, and export to PDF.
                 </p>
                 <Button
                   className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-8 py-6 transition-all hover:scale-[1.02] hover:shadow-lg"

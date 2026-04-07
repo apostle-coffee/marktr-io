@@ -312,9 +312,13 @@ export default function Pricing() {
               All plans renew automatically. You can cancel anytime in your account settings.
             </p>
             <p className="font-['Inter'] text-xs text-foreground/60">
-              <a href="#" className="underline hover:text-foreground transition-colors">
-                Full Terms & Privacy Policy
-              </a>
+              <Link to="/terms-of-service" className="underline hover:text-foreground transition-colors">
+                Full Terms
+              </Link>{" "}
+              &{" "}
+              <Link to="/privacy-policy" className="underline hover:text-foreground transition-colors">
+                Privacy Policy
+              </Link>
             </p>
           </div>
         </div>

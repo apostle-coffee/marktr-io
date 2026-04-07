@@ -99,11 +99,11 @@ export function EmailCaptureScreen({
 
         <p className="text-xs text-foreground/60 max-w-md">
           By continuing, you agree to our{" "}
-          <Link to="/privacy" className="underline text-foreground">
+          <Link to="/privacy-policy" className="underline text-foreground">
             Privacy Policy
           </Link>{" "}
           and{" "}
-          <Link to="/terms" className="underline text-foreground">
+          <Link to="/terms-of-service" className="underline text-foreground">
             Terms &amp; Conditions
           </Link>.
         </p>

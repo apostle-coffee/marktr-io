@@ -192,9 +192,9 @@ export function CheckoutModal({
             <div className="bg-accent-grey/20 border border-warm-grey rounded-design p-4">
               <p className="font-['Inter'] text-xs text-foreground/70">
                 By subscribing, you agree to recurring charges and our{" "}
-                <a href="#" className="underline hover:text-foreground">Terms of Service</a>
+                <a href="/terms-of-service" className="underline hover:text-foreground">Terms of Service</a>
                 {" "}&{" "}
-                <a href="#" className="underline hover:text-foreground">Privacy Policy</a>
+                <a href="/privacy-policy" className="underline hover:text-foreground">Privacy Policy</a>
                 . You can cancel anytime.
               </p>
             </div>
@@ -227,11 +227,11 @@ export function CheckoutModal({
           {/* Footer Links */}
           <div className="mt-6 pt-6 border-t border-warm-grey">
             <div className="flex items-center justify-center gap-4 flex-wrap">
-              <a href="#" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
+              <a href="/terms-of-service" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
                 Terms of Service
               </a>
               <span className="text-foreground/30">•</span>
-              <a href="#" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
+              <a href="/privacy-policy" className="font-['Inter'] text-xs text-foreground/60 hover:text-foreground transition-colors">
                 Privacy Policy
               </a>
               <span className="text-foreground/30">•</span>
