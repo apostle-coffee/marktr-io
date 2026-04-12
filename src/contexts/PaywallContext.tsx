@@ -126,11 +126,6 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
         const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
         const checkoutGuestSecret = (import.meta.env.VITE_CHECKOUT_GUEST_SECRET || "").trim();
-        if (!accessToken && !checkoutGuestSecret) {
-          throw new Error(
-            "Unable to start checkout: enable Anonymous sign-ins in Supabase Auth, or set VITE_CHECKOUT_GUEST_SECRET (and matching CHECKOUT_GUEST_SECRET on the Edge Function)."
-          );
-        }
         const checkoutUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
         const redirectBasePath = accessToken ? "/dashboard" : "/icp-results";
 
@@ -154,8 +149,8 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           "Content-Type": "application/json",
           apikey: supabaseAnonKey,
           // Functions gateway may require a JWT in Authorization before our code runs.
-          // With a real session we send the user access token; otherwise the public anon key
-          // plus x-guest-secret (validated in create-checkout-session).
+          // With a real session we send the user access token; otherwise the public anon JWT
+          // (Edge Function optionally validates x-guest-secret when secrets are configured).
           Authorization: `Bearer ${accessToken || supabaseAnonKey}`,
         };
         if (!accessToken && checkoutGuestSecret) {
@@ -188,11 +183,6 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
             plan: nextPlan,
             priceId,
           });
-          if ((data as any)?.code === "MISSING_CHECKOUT_GUEST_SECRET") {
-            throw new Error(
-              "Checkout needs CHECKOUT_GUEST_SECRET on Supabase (Edge Function secrets). Use the same value as VITE_CHECKOUT_GUEST_SECRET: supabase secrets set CHECKOUT_GUEST_SECRET=…"
-            );
-          }
           const msg =
             (data as any)?.message ||
             (data as any)?.error ||

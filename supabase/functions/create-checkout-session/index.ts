@@ -1,7 +1,9 @@
 // Supabase Edge Function: create-checkout-session
 // Deploy with: supabase functions deploy create-checkout-session
 // Set secrets with:
-//   supabase secrets set STRIPE_SECRET_KEY=sk_... CHECKOUT_GUEST_SECRET=...
+//   supabase secrets set STRIPE_SECRET_KEY=sk_live_...
+// Optional hardening (must match VITE_CHECKOUT_GUEST_SECRET if used):
+//   supabase secrets set CHECKOUT_GUEST_SECRET=...
 // (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are injected by Supabase by default.)
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -105,25 +107,23 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
     let user: { id: string } | null = null;
 
-    // Gateway JWT check: callers may send the public anon key as Bearer when there is no
-    // session. In that case we still require x-guest-secret to match (checkout abuse guard).
+    // Gateway JWT check: callers may send the public anon key as Bearer when there is no session.
+    // If CHECKOUT_GUEST_SECRET is set, x-guest-secret must match (extra abuse guard). If unset,
+    // guest checkout is allowed on anon bearer only (anon key is already public in the client).
     const bearerIsProjectAnonKey = bearerJwt === supabaseAnonKey.trim();
 
     if (bearerIsProjectAnonKey) {
-      if (!checkoutGuestSecret) {
-        return errorJson(
-          {
-            error: "CHECKOUT_GUEST_SECRET is not set on the Edge Function",
-            code: "MISSING_CHECKOUT_GUEST_SECRET",
-          },
-          500
+      if (checkoutGuestSecret) {
+        const guestSecret = req.headers.get("x-guest-secret")?.trim() ?? "";
+        if (guestSecret !== checkoutGuestSecret) {
+          return errorJson({ error: "Unauthorized" }, 401);
+        }
+        console.log("[create-checkout-session] auth_branch=guest_secret");
+      } else {
+        console.warn(
+          "[create-checkout-session] guest checkout via anon bearer (CHECKOUT_GUEST_SECRET not set)"
         );
       }
-      const guestSecret = req.headers.get("x-guest-secret")?.trim() ?? "";
-      if (guestSecret !== checkoutGuestSecret) {
-        return errorJson({ error: "Unauthorized" }, 401);
-      }
-      console.log("[create-checkout-session] auth_branch=guest_secret");
     } else {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: `Bearer ${bearerJwt}` } },
