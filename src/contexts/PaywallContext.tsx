@@ -138,10 +138,12 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
           apikey: supabaseAnonKey,
+          // Functions gateway may require a JWT in Authorization before our code runs.
+          // With a real session we send the user access token; otherwise the public anon key
+          // plus x-guest-secret (validated in create-checkout-session).
+          Authorization: `Bearer ${accessToken || supabaseAnonKey}`,
         };
-        if (accessToken) {
-          headers.Authorization = `Bearer ${accessToken}`;
-        } else {
+        if (!accessToken && checkoutGuestSecret) {
           headers["x-guest-secret"] = checkoutGuestSecret;
         }
         const res = await fetch(checkoutUrl, {
