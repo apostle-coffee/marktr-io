@@ -72,21 +72,34 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
           throw new Error("Email is required to start checkout.");
         }
         setIsStartingCheckout(true);
-        const {
-          data: { user: currentUser },
-          error: userError,
-        } = await supabase.auth.getUser();
 
-        if (!currentUser && !userError) {
-          const { error: anonError } = await supabase.auth.signInAnonymously();
-          if (anonError) throw anonError;
-
-          // Ensure the anon session is actually hydrated before calling edge functions
-          const { data: sess } = await supabase.auth.getSession();
-          if (!sess?.session?.access_token) {
-            throw new Error("Unable to start anonymous session. Please refresh and try again.");
+        // Prefer a real session access_token for Authorization. The Edge Function then uses the
+        // authenticated branch and does not require CHECKOUT_GUEST_SECRET. If getUser() errors
+        // (e.g. stale refresh), we still try anon sign-in rather than skipping it.
+        let accessToken = "";
+        {
+          const { data: s0 } = await supabase.auth.getSession();
+          accessToken = s0?.session?.access_token ?? "";
+          if (!accessToken) {
+            const {
+              data: { user: existingUser },
+            } = await supabase.auth.getUser();
+            if (existingUser) {
+              const { data: refreshed } = await supabase.auth.refreshSession();
+              accessToken = refreshed.session?.access_token ?? "";
+            }
+          }
+          if (!accessToken) {
+            const { error: anonError } = await supabase.auth.signInAnonymously();
+            if (anonError) {
+              console.warn("[paywall] signInAnonymously failed", anonError);
+            } else {
+              const { data: s1 } = await supabase.auth.getSession();
+              accessToken = s1?.session?.access_token ?? "";
+            }
           }
         }
+
         const monthlyPriceId = import.meta.env.VITE_STRIPE_PRICE_MONTHLY as
           | string
           | undefined;
@@ -113,9 +126,11 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
         const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || "").trim();
         const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
         const checkoutGuestSecret = (import.meta.env.VITE_CHECKOUT_GUEST_SECRET || "").trim();
-        const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData?.session ?? null;
-        const accessToken = session?.access_token ?? "";
+        if (!accessToken && !checkoutGuestSecret) {
+          throw new Error(
+            "Unable to start checkout: enable Anonymous sign-ins in Supabase Auth, or set VITE_CHECKOUT_GUEST_SECRET (and matching CHECKOUT_GUEST_SECRET on the Edge Function)."
+          );
+        }
         const checkoutUrl = `${supabaseUrl}/functions/v1/create-checkout-session`;
         const redirectBasePath = accessToken ? "/dashboard" : "/icp-results";
 
@@ -173,6 +188,11 @@ export function PaywallProvider({ children }: { children: React.ReactNode }) {
             plan: nextPlan,
             priceId,
           });
+          if ((data as any)?.code === "MISSING_CHECKOUT_GUEST_SECRET") {
+            throw new Error(
+              "Checkout needs CHECKOUT_GUEST_SECRET on Supabase (Edge Function secrets). Use the same value as VITE_CHECKOUT_GUEST_SECRET: supabase secrets set CHECKOUT_GUEST_SECRET=…"
+            );
+          }
           const msg =
             (data as any)?.message ||
             (data as any)?.error ||
