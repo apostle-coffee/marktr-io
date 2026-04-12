@@ -59,7 +59,17 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-accent-grey text-center text-sm text-text-dark/80">
-          <p>&copy; {new Date().getFullYear()} ICP Generator. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} ICP Generator. All rights reserved. Created and managed by{" "}
+            <a
+              href="https://bullfinchdigital.com"
+              className="underline hover:text-button-green transition-colors"
+              rel="noopener noreferrer"
+            >
+              Bullfinch Digital Ltd
+            </a>
+            .
+          </p>
         </div>
       </div>
     </footer>
