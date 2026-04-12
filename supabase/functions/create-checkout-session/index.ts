@@ -22,14 +22,17 @@ function escapeStripeSearchValue(v: string) {
   return v.replace(/["\\]/g, "\\$&").trim();
 }
 
+/** Must include every header the browser may send on POST (see PaywallContext fetch). */
+const CORS_ALLOW_HEADERS =
+  "authorization, x-client-info, apikey, content-type, x-guest-secret";
+
 function json(resBody: unknown, status = 200) {
   return new Response(JSON.stringify(resBody), {
     status,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers":
-        "authorization, x-client-info, apikey, content-type",
+      "Access-Control-Allow-Headers": CORS_ALLOW_HEADERS,
     },
   });
 }
@@ -44,8 +47,7 @@ function corsPreflight(req: Request) {
     return new Response("ok", {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers":
-          "authorization, x-client-info, apikey, content-type",
+        "Access-Control-Allow-Headers": CORS_ALLOW_HEADERS,
         "Access-Control-Allow-Methods": "POST, OPTIONS",
       },
     });
