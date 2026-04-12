@@ -8,6 +8,9 @@ interface EmailCaptureScreenProps {
   onContinue: () => void;
   onBack: () => void;
   onTokenChange?: (token: string | null) => void;
+  /** When Turnstile is configured, Enter must not bypass the widget (same rules as the main CTA). */
+  turnstileRequired?: boolean;
+  hasTurnstileToken?: boolean;
 }
 
 export function EmailCaptureScreen({ 
@@ -15,6 +18,8 @@ export function EmailCaptureScreen({
   onEmailChange, 
   onContinue,
   onTokenChange,
+  turnstileRequired = false,
+  hasTurnstileToken = false,
 }: EmailCaptureScreenProps) {
   const scriptLoadedRef = useRef(false);
   const widgetIdRef = useRef<string | null>(null);
@@ -25,9 +30,13 @@ export function EmailCaptureScreen({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && isValidEmail(email)) {
-      onContinue();
+    if (e.key !== "Enter") return;
+    if (!isValidEmail(email)) return;
+    if (turnstileRequired && !hasTurnstileToken) {
+      e.preventDefault();
+      return;
     }
+    onContinue();
   };
 
   // Load Turnstile script once and render widget once (StrictMode safe)

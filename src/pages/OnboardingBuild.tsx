@@ -580,7 +580,13 @@ export default function OnboardingBuild() {
             email={formData.email}
             onEmailChange={(value) => setFormData({ ...formData, email: value })}
             onTokenChange={(token) => setLeadToken(token)}
+            turnstileRequired={turnstileConfigured}
+            hasTurnstileToken={Boolean(leadToken)}
             onContinue={async () => {
+              if (turnstileConfigured && !leadToken) {
+                console.warn("[LeadCapture] blocked: Turnstile token not ready yet");
+                return;
+              }
               // reset guard each time we enter loading step
               hasRunRef.current = false;
               console.debug("[LeadCapture] continue", { email: formData.email, leadToken });
@@ -645,6 +651,10 @@ export default function OnboardingBuild() {
 
   const handleCtaClick = async () => {
     if (currentStep === "9_EmailCapture") {
+      if (turnstileConfigured && !leadToken) {
+        console.warn("[LeadCapture] blocked CTA: Turnstile token not ready yet");
+        return;
+      }
       hasRunRef.current = false;
       console.debug("[LeadCapture] CTA", { email: formData.email, leadToken });
       // Fire-and-forget (time-boxed) lead capture so UI is never blocked
