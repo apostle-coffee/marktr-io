@@ -1,0 +1,3 @@
+# Public lead capture is gated by Turnstile in the function body.
+# JWT is not required (guests may hit a race before anonymous auth finishes).
+verify_jwt = false

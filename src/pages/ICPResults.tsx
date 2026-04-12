@@ -159,7 +159,7 @@ export default function ICPResults() {
               Meet Your Ideal Customers
             </h1>
             <p className="font-['Inter'] text-foreground/70 max-w-2xl mx-auto text-lg">
-              We've identified 3 distinct ICPs. Your first is unlocked - upgrade to reveal the full picture and discover the customers you're missing.
+              We've identified 3 distinct ICPs. Explore each profile for free, then upgrade to unlock full editing, strategy generation, and exports.
             </p>
           </div>
 
@@ -183,7 +183,7 @@ export default function ICPResults() {
                           }}
                           userTier={"free" as any}
                           onUpgrade={() => {}}
-                          isLocked={index > 0}
+                          isLocked={false}
                           onChangeColor={() => {}}
                           onChangeAvatar={() => {}}
                           brands={[]}

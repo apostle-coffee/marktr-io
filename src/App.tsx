@@ -29,6 +29,8 @@ import BrandEditor from "./pages/BrandEditor";
 import GuestIcpPreview from "./pages/GuestIcpPreview";
 import Resources from "./pages/Resources";
 import ResourcePost from "./pages/ResourcePost";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const GA_MEASUREMENT_ID = "G-9E3B7RFKGH";
 let lastTrackedPath: string | null = null;
@@ -102,6 +104,24 @@ export default function App() {
                 <Footer />
               </>
             } />
+
+            <Route path="/privacy-policy" element={
+              <>
+                <Header />
+                <PrivacyPolicy />
+                <Footer />
+              </>
+            } />
+            <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
+
+            <Route path="/terms-of-service" element={
+              <>
+                <Header />
+                <TermsOfService />
+                <Footer />
+              </>
+            } />
+            <Route path="/terms" element={<Navigate to="/terms-of-service" replace />} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<AuthRedirect />} />

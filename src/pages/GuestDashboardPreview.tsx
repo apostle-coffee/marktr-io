@@ -41,7 +41,7 @@ export default function GuestDashboardPreview() {
       ...icp,
       id: icp.id || `guest-icp-${index}`,
       _index: index,
-      isLocked: index > 0, // only first ICP is unlocked
+      isLocked: false,
       brand_id: icp.brand_id ?? guestBrand.id,
       brandName: guestBrand.name,
       gender: icp.gender ?? icp.avatar_gender ?? null,
@@ -108,13 +108,7 @@ export default function GuestDashboardPreview() {
                   onDelete={() => {}}
                   onRemoveFromCollection={() => {}}
                   onAddToCollection={() => {}}
-                  onCardClickOverride={() => {
-                    if (index === 0) {
-                      navigate("/icp-preview/0");
-                    } else {
-                      openPaywall();
-                    }
-                  }}
+                  onCardClickOverride={() => navigate(`/icp-preview/${index}`)}
                 />
               ))}
             </div>

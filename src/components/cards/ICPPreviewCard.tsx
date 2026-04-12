@@ -255,11 +255,21 @@ export function ICPPreviewCard(props: ICPPreviewCardProps) {
     }
 
     if (action === "change-color") {
+      if (!hasFullAccess) {
+        triggerShake();
+        onUpgrade?.();
+        return;
+      }
       onChangeColor?.(icp.id, icp.color ?? null);
       return;
     }
 
     if (action === "change-avatar") {
+      if (!hasFullAccess) {
+        triggerShake();
+        onUpgrade?.();
+        return;
+      }
       onChangeAvatar?.(
         icp.id,
         icp.avatar_key ?? null,
@@ -270,12 +280,22 @@ export function ICPPreviewCard(props: ICPPreviewCardProps) {
     }
 
     if (action === "move-brand") {
+      if (!hasFullAccess) {
+        triggerShake();
+        onUpgrade?.();
+        return;
+      }
       setMoveBrandId(icp.brand_id ?? null);
       setMoveBrandOpen(true);
       return;
     }
 
     if (action === "delete") {
+      if (!hasFullAccess) {
+        triggerShake();
+        onUpgrade?.();
+        return;
+      }
       const confirmed = window.confirm(
         "Are you sure you want to delete this ICP? This action cannot be undone."
       );

@@ -69,7 +69,7 @@ export default function DashboardShell({
           />
 
           <div className="flex-1 flex flex-col">
-            <main className={contentClassName ?? "flex-1 px-6 py-8 lg:px-12"}>
+            <main className={`${contentClassName ?? "flex-1 px-6 py-8 lg:px-12"} pb-24 lg:pb-8`}>
               {children}
             </main>
             <Footer />

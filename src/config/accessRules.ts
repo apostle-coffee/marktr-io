@@ -3,7 +3,7 @@ export const TIER_LIMITS = {
     maxICPs: 3,
     maxCollections: 1,
     maxBrands: 1,
-    maxViewableICPs: 1,
+    maxViewableICPs: 3,
     exportAllowedBeyondFirst: false,
   },
   pro: {
@@ -48,9 +48,7 @@ export function canCreateBrand(count: number, tier: TierInput) {
 
 export function canViewICP(tier: TierInput, index: number) {
   const resolved = normalizeTier(tier);
-  // Free → only first ICP unlocked; Pro/Team → all unlocked
-  if (resolved === "free") return index === 0;
-  return true;
+  return index < TIER_LIMITS[resolved].maxViewableICPs;
 }
 
 export function isICPLocked(tier: TierInput, index: number) {
