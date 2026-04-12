@@ -241,7 +241,8 @@ Deno.serve(async (req) => {
 
   const webhookSecret = (Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "").trim();
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+  const supabaseServiceRoleKey =
+    Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!webhookSecret || !supabaseUrl || !supabaseServiceRoleKey) {
     logReject("missing_env", {

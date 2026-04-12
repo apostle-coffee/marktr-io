@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+    const supabaseServiceRoleKey =
+      Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     // Log env presence (not values) to diagnose 500s fast
     console.log("[get-guest-checkout] env", {

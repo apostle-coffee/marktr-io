@@ -1,7 +1,8 @@
 // Supabase Edge Function: create-checkout-session
 // Deploy with: supabase functions deploy create-checkout-session
 // Set secrets with:
-//   supabase secrets set STRIPE_SECRET_KEY=sk_... SUPABASE_URL=... SUPABASE_ANON_KEY=...
+//   supabase secrets set STRIPE_SECRET_KEY=sk_... CHECKOUT_GUEST_SECRET=...
+// (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are injected by Supabase by default.)
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import Stripe from "https://esm.sh/stripe@12.18.0?target=deno";
@@ -66,7 +67,8 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const supabaseServiceRoleKey = Deno.env.get("SERVICE_ROLE_KEY");
+    const supabaseServiceRoleKey =
+      Deno.env.get("SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     const checkoutGuestSecret = Deno.env.get("CHECKOUT_GUEST_SECRET");
 
@@ -109,7 +111,13 @@ Deno.serve(async (req) => {
 
     if (bearerIsProjectAnonKey) {
       if (!checkoutGuestSecret) {
-        return errorJson({ error: "Missing server env vars" }, 500);
+        return errorJson(
+          {
+            error: "CHECKOUT_GUEST_SECRET is not set on the Edge Function",
+            code: "MISSING_CHECKOUT_GUEST_SECRET",
+          },
+          500
+        );
       }
       const guestSecret = req.headers.get("x-guest-secret")?.trim() ?? "";
       if (guestSecret !== checkoutGuestSecret) {
