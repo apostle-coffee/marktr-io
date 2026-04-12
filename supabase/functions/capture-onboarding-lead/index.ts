@@ -22,20 +22,41 @@ const json = (body: any, status = 200) =>
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 
-async function verifyTurnstile(token: string | null | undefined) {
-  if (!token || !turnstileSecret) return false;
+type TurnstileVerifyResult = { ok: true } | { ok: false; errorCodes: string[] };
+
+function clientIpFromRequest(req: Request): string | null {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf?.trim()) return cf.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  const first = xff?.split(",")[0]?.trim();
+  return first || null;
+}
+
+async function verifyTurnstile(
+  token: string | null | undefined,
+  remoteip?: string | null,
+): Promise<TurnstileVerifyResult> {
+  if (!token) return { ok: false, errorCodes: ["missing-token"] };
+  if (!turnstileSecret) return { ok: false, errorCodes: ["missing-secret"] };
   try {
     const form = new FormData();
     form.append("secret", turnstileSecret);
     form.append("response", token);
+    if (remoteip) form.append("remoteip", remoteip);
     const resp = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       body: form,
     });
     const data = await resp.json();
-    return !!data.success;
+    if (data?.success) return { ok: true };
+    const codes = Array.isArray(data?.["error-codes"]) ? data["error-codes"] : ["verification-failed"];
+    console.error("capture-onboarding-lead: Turnstile siteverify failed", {
+      errorCodes: codes,
+      httpStatus: resp.status,
+    });
+    return { ok: false, errorCodes: codes };
   } catch {
-    return false;
+    return { ok: false, errorCodes: ["turnstile-request-failed"] };
   }
 }
 
@@ -79,9 +100,36 @@ serve(async (req) => {
         return json({ error: "User mismatch" }, 403);
       }
     } else {
-      // capture intent: require Turnstile token
-      const ok = await verifyTurnstile(token);
-      if (!ok) return json({ error: "Turnstile verification failed" }, 400);
+      // capture intent: require Turnstile (site token + server secret)
+      if (!turnstileSecret) {
+        console.error(
+          "capture-onboarding-lead: TURNSTILE_SECRET_KEY is not set; refusing unverified lead capture",
+        );
+        return json(
+          {
+            error: "Server misconfiguration",
+            code: "turnstile_secret_missing",
+            hint: "Set TURNSTILE_SECRET_KEY on the Edge Function (Supabase Dashboard → Edge Functions → Secrets).",
+          },
+          503,
+        );
+      }
+      if (!token) {
+        return json({ error: "Turnstile token required", code: "turnstile_token_missing" }, 400);
+      }
+      const turnstileResult = await verifyTurnstile(token, clientIpFromRequest(req));
+      if (!turnstileResult.ok) {
+        return json(
+          {
+            error: "Turnstile verification failed",
+            code: "turnstile_failed",
+            errorCodes: turnstileResult.errorCodes,
+            hint:
+              "Check Cloudflare Turnstile widget hostnames include this origin, and TURNSTILE_SECRET_KEY matches the widget’s site key.",
+          },
+          400,
+        );
+      }
       userId = userIdFromBody; // optional for capture
     }
 

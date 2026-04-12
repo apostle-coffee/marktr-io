@@ -32,13 +32,13 @@ export function PaywallModal({
   const hasValidEmail = isValidEmail(trimmedEmail);
 
   const trialFeatures = [
-    "All 3 ICPs unlocked",
+    "All ICP features unlocked",
     "Full customer intelligence",
     "Messaging that converts",
     "Content strategy and campaign ideas",
     "Brands and collections",
     "Edit mode",
-    "Export to PDF and Ads JSON",
+    "Export to PDF and ad-ready formats",
     "Meta Ads lookalike audiences",
   ];
 
@@ -72,10 +72,10 @@ export function PaywallModal({
         <div className="sticky top-0 bg-background border-b border-warm-grey p-6 flex items-start justify-between">
           <div>
             <h2 className="font-['Fraunces'] text-3xl mb-2">
-              Start your 7-day free trial
+              Get full access in 60 seconds
             </h2>
             <p className="font-['Inter'] text-foreground/70 max-w-xl">
-              Full access to the ICP Generator. No charge today.
+              Start your 7-day free trial now. £0 today, then billed on day 8.
             </p>
           </div>
           <button
@@ -176,7 +176,7 @@ export function PaywallModal({
             {/* Legal Disclosure */}
             <div className="bg-accent-grey/20 border border-warm-grey rounded-design p-4 mb-6">
               <p className="font-['Inter'] text-xs text-foreground/70 text-center">
-                No charge today. Cancel anytime before day 7 to avoid being billed.
+                £0 today • Cancel anytime before day 7 • Then {selectedPlan === "annual" ? "£300/year" : "£30/month"}
               </p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export function PaywallModal({
           </div>
 
           <div className="mb-8">
-            <h3 className="font-['Fraunces'] text-xl mb-4">What you’ll get during your trial</h3>
+            <h3 className="font-['Fraunces'] text-xl mb-4">What full access includes</h3>
             <div className="bg-gradient-to-br from-button-green/10 to-[#BBA0E5]/10 border border-black rounded-design p-6">
               <ul className="grid sm:grid-cols-2 gap-3">
                 {trialFeatures.map((feature, index) => (
@@ -244,11 +244,11 @@ export function PaywallModal({
                   Redirecting to checkout…
                 </span>
               ) : (
-                "Start 7-day free trial"
+                "Get full access"
               )}
             </Button>
             <p className="text-center text-xs text-foreground/60 font-['Inter']">
-              No charge today • Cancel anytime
+              £0 today • Cancel anytime before day 7
             </p>
 
             <button
@@ -256,7 +256,7 @@ export function PaywallModal({
               disabled={isStartingCheckout}
               className="w-full font-['Inter'] text-sm text-foreground/70 hover:text-foreground transition-colors py-2 text-center"
             >
-              Not now — continue with Free
+              Continue with limited free version
             </button>
           </div>
 
@@ -294,7 +294,7 @@ export function PaywallModal({
           <div className="relative w-full max-w-md bg-background border border-black rounded-design shadow-2xl p-6">
             <div className="flex items-start justify-between gap-4 mb-3">
               <h3 className="font-['Fraunces'] text-2xl">
-                Continue on Free?
+                Continue with limited free?
               </h3>
               <button
                 onClick={() => setShowExitConfirm(false)}
@@ -306,7 +306,7 @@ export function PaywallModal({
             </div>
 
             <p className="font-['Inter'] text-sm text-foreground/70 mb-4">
-              You’ll be limited to 1 ICP, no exports, no collections, and no content strategy.
+              You’ll keep 3 read-only ICP previews, but editing, exports, collections, and strategy generation stay locked.
             </p>
 
             <div className="flex flex-col gap-3">

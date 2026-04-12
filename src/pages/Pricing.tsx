@@ -161,7 +161,7 @@ export default function Pricing() {
               <ul className="space-y-3 mb-8 flex-grow">
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-button-green shrink-0 mt-0.5" />
-                  <span className="font-['Inter'] text-sm">Full access to all 3 ICPs</span>
+                  <span className="font-['Inter'] text-sm">All ICP features unlocked</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-5 h-5 text-button-green shrink-0 mt-0.5" />
@@ -194,9 +194,12 @@ export default function Pricing() {
                       : "bg-transparent text-foreground hover:bg-accent-grey/20 border-warm-grey"
                   }`}
                 >
-                  Choose Monthly
+                  Start free trial (Monthly)
                 </Button>
               </Link>
+              <p className="mt-3 text-center font-['Inter'] text-xs text-foreground/60">
+                £0 today • then {getCurrencySymbol()}{getMonthlyPrice()}/mo after 7 days
+              </p>
 
               <div className="mt-6 pt-6 border-t border-warm-grey">
                 <p className="font-['Inter'] text-xs text-foreground/50 text-center">
@@ -246,13 +249,13 @@ export default function Pricing() {
                   VAT may apply
                 </p>
                 <p className="font-['Inter'] text-sm text-foreground/70">
-                  2 months free + exclusive perks
+                  Best value for long-term use
                 </p>
               </div>
 
               <div className="mb-4 pb-4 border-b border-warm-grey">
                 <p className="font-['Inter'] text-xs text-foreground/70">
-                  Everything in Monthly
+                  Same full access, lower effective monthly price
                 </p>
               </div>
 
@@ -287,9 +290,12 @@ export default function Pricing() {
                       : "bg-transparent text-foreground hover:bg-accent-grey/20 border-warm-grey"
                   }`}
                 >
-                  Get Yearly (Recommended)
+                  Start free trial (Yearly)
                 </Button>
               </Link>
+              <p className="mt-3 text-center font-['Inter'] text-xs text-foreground/60">
+                £0 today • then {getCurrencySymbol()}{getYearlyTotal()}/year after 7 days
+              </p>
 
               <div className="mt-6 pt-6 border-t border-warm-grey">
                 <p className="font-['Inter'] text-xs text-foreground/50 text-center">
@@ -356,7 +362,7 @@ export default function Pricing() {
                 </tr>
                 <tr className="border-b border-warm-grey">
                   <td className="p-4 sm:p-6">ICPs included</td>
-                  <td className="text-center p-4 sm:p-6 text-foreground/60">1 ICP (guest session)</td>
+                  <td className="text-center p-4 sm:p-6 text-foreground/60">3 ICP previews (read-only)</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited ICPs</td>
                   <td className="text-center p-4 sm:p-6 bg-button-green/5">Unlimited ICPs</td>
                 </tr>

@@ -73,6 +73,7 @@ export default function OnboardingBuild() {
   const { user, loading: authLoading } = useAuth();
   const anonInitRef = useRef(false);
   const [leadToken, setLeadToken] = useState<string | null>(null);
+  const turnstileConfigured = Boolean((import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined)?.trim());
   const [currentStep, setCurrentStep] = useState<Step>("1_Welcome");
   const hasRunRef = useRef(false);
   const hasPersistedRef = useRef(false);
@@ -586,7 +587,7 @@ export default function OnboardingBuild() {
               // Fire-and-forget (time-boxed) lead capture so UI is never blocked
               await Promise.race([
                 captureLead(formData.email, leadToken),
-                new Promise((resolve) => setTimeout(resolve, 1500)),
+                new Promise((resolve) => setTimeout(resolve, 8000)),
               ]);
               setCurrentStep("10_Loading");
             }}
@@ -629,8 +630,12 @@ export default function OnboardingBuild() {
         return formData.marketingChannels.length > 0;
       case "8_GeographyCurrency":
         return formData.country.trim().length > 0 && formData.currency.trim().length > 0;
-      case "9_EmailCapture":
-        return formData.email.trim().length > 0 && formData.email.includes("@");
+      case "9_EmailCapture": {
+        const emailOk = formData.email.trim().length > 0 && formData.email.includes("@");
+        if (!emailOk) return false;
+        if (turnstileConfigured && !leadToken) return false;
+        return true;
+      }
       case "10_Loading":
         return false;
       default:
@@ -645,7 +650,7 @@ export default function OnboardingBuild() {
       // Fire-and-forget (time-boxed) lead capture so UI is never blocked
       await Promise.race([
         captureLead(formData.email, leadToken),
-        new Promise((resolve) => setTimeout(resolve, 1500)),
+        new Promise((resolve) => setTimeout(resolve, 8000)),
       ]);
       setCurrentStep("10_Loading");
       return;
@@ -753,9 +758,16 @@ export default function OnboardingBuild() {
                       {getCTAText()}
                     </Button>
                     {currentStep === "9_EmailCapture" && (
-                      <p className="mt-2 text-xs text-foreground/60 font-['Inter']">
-                        No spam. Just your ICP and access to your dashboard.
-                      </p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-foreground/60 font-['Inter']">
+                          No spam. Just your ICP and access to your dashboard.
+                        </p>
+                        {turnstileConfigured && !leadToken && (
+                          <p className="text-xs text-foreground/80 font-['Inter']">
+                            Complete the verification box above, then continue.
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
