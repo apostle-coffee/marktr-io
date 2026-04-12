@@ -90,23 +90,35 @@ Deno.serve(async (req) => {
       );
     }
 
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const hasAuthHeader = authHeader.startsWith("Bearer ");
-    console.log(`[create-checkout-session] auth_present=${hasAuthHeader}`);
-    if (!hasAuthHeader) {
+    const authHeader = req.headers.get("Authorization")?.trim() ?? "";
+    const bearerJwt = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+    console.log(`[create-checkout-session] auth_bearer_present=${Boolean(bearerJwt)}`);
+
+    if (!bearerJwt) {
+      return errorJson({ error: "Unauthorized" }, 401);
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+    let user: { id: string } | null = null;
+
+    // Gateway JWT check: callers may send the public anon key as Bearer when there is no
+    // session. In that case we still require x-guest-secret to match (checkout abuse guard).
+    const bearerIsProjectAnonKey = bearerJwt === supabaseAnonKey.trim();
+
+    if (bearerIsProjectAnonKey) {
       if (!checkoutGuestSecret) {
         return errorJson({ error: "Missing server env vars" }, 500);
       }
-      const guestSecret = req.headers.get("x-guest-secret") ?? "";
+      const guestSecret = req.headers.get("x-guest-secret")?.trim() ?? "";
       if (guestSecret !== checkoutGuestSecret) {
         return errorJson({ error: "Unauthorized" }, 401);
       }
-    }
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
-    let user: { id: string } | null = null;
-    if (hasAuthHeader) {
+      console.log("[create-checkout-session] auth_branch=guest_secret");
+    } else {
       const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: authHeader } },
+        global: { headers: { Authorization: `Bearer ${bearerJwt}` } },
       });
       const { data, error: userError } = await supabase.auth.getUser();
       if (userError || !data?.user?.id) {
@@ -117,8 +129,6 @@ Deno.serve(async (req) => {
         user = { id: data.user.id };
         console.log("[create-checkout-session] auth_branch=authenticated");
       }
-    } else {
-      console.log("[create-checkout-session] auth_branch=anon (no auth header)");
     }
 
     const stripe = new Stripe(stripeKey, {
