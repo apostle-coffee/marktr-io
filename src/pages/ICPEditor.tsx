@@ -10,6 +10,7 @@ import { exportICPAsPDF } from "../utils/exportICP";
 import { canExportICP } from "../config/accessRules";
 import { usePaywall } from "../contexts/PaywallContext";
 import { useICPStrategy } from "../hooks/useICPStrategy";
+import { MetaActivationPackPanel } from "../components/icp/MetaActivationPackPanel";
 import DashboardShell from "../layouts/DashboardShell";
 import { ICPProfileLayout } from "../components/icp/ICPProfileLayout";
 import ICPColorModal from "../components/ICPColorModal";
@@ -41,6 +42,7 @@ import {
   Palette,
   Image as ImageIcon,
   FolderPlus,
+  Loader2,
 } from "lucide-react";
 
 export default function ICPEditor() {
@@ -116,6 +118,8 @@ export default function ICPEditor() {
   const [showNewStrategyForm, setShowNewStrategyForm] = useState(false);
   const [isRenamingStrategy, setIsRenamingStrategy] = useState(false);
   const [renameStrategyValue, setRenameStrategyValue] = useState("");
+  const [hasUnsavedMetaPackRename, setHasUnsavedMetaPackRename] = useState(false);
+  const metaPackSavePendingRenameRef = useRef<null | (() => Promise<boolean>)>(null);
   const activeStrategyIndex = strategyRecord
     ? strategyRecords.findIndex((r) => r.id === strategyRecord.id)
     : -1;
@@ -124,7 +128,7 @@ export default function ICPEditor() {
   const activeStrategySavedName = strategyRecord?.strategy_name || activeStrategyFallbackName;
   const hasUnsavedStrategyRename =
     isRenamingStrategy && renameStrategyValue.trim() !== activeStrategySavedName.trim();
-  const hasUnsavedChanges = isDirty || hasUnsavedStrategyRename;
+  const hasUnsavedChanges = isDirty || hasUnsavedStrategyRename || hasUnsavedMetaPackRename;
 
   const handleGenerateNewStrategy = useCallback(async () => {
     const res = await generateStrategy({
@@ -329,6 +333,10 @@ export default function ICPEditor() {
       const renamed = await renameStrategy(strategyRecord.id, renameStrategyValue);
       if (!renamed) return;
       setIsRenamingStrategy(false);
+    }
+    if (metaPackSavePendingRenameRef.current) {
+      const ok = await metaPackSavePendingRenameRef.current();
+      if (!ok) return;
     }
     setLeaveDialogOpen(false);
     performPendingNavigation(pendingNavRef.current);
@@ -1534,11 +1542,36 @@ export default function ICPEditor() {
                         }
                         className="bg-button-green hover:bg-button-green/90 text-foreground border border-black rounded-design px-6 py-3"
                       >
-                        {strategyGenerating ? "Generating…" : "Generate Strategy"}
+                        {strategyGenerating ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Generating strategy...
+                          </span>
+                        ) : (
+                          "Generate Strategy"
+                        )}
                       </Button>
                     </div>
+                    {strategyGenerating && (
+                      <p className="text-xs font-['Inter'] text-foreground/70 mt-3 animate-pulse">
+                        Working through your ICP and brand context. This can take up to 30 seconds.
+                      </p>
+                    )}
                   </div>
                 )}
+              </div>
+
+              <div className="mt-6">
+                <MetaActivationPackPanel
+                  icpId={id}
+                  selectedStrategyId={selectedStrategyId}
+                  isFreeTier={isFreeTier}
+                  onUpgrade={() => openPaywall()}
+                  onUnsavedRenameChange={setHasUnsavedMetaPackRename}
+                  registerSavePendingRename={(saveFn) => {
+                    metaPackSavePendingRenameRef.current = saveFn;
+                  }}
+                />
               </div>
             </div>
         }
