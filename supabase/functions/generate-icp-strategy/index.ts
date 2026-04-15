@@ -7,7 +7,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const PROMPT_VERSION = "icp_strategy_v1";
+const PROMPT_VERSION = "icp_strategy_v2_brand_context";
 const MODEL = "gpt-5.2";
 
 type GenerateInput = {
@@ -16,6 +16,10 @@ type GenerateInput = {
   channel?: string | null;
   offerType?: string | null;
   tone?: string | null;
+  businessStage?: string | null;
+  monthlyBudgetBand?: string | null;
+  objectiveHorizon?: string | null;
+  marketingCapacity?: string | null;
 };
 
 function json(resBody: unknown, status = 200) {
@@ -44,7 +48,7 @@ function corsPreflight(req: Request) {
   return null;
 }
 
-function buildPrompt(icp: Record<string, any>, input: GenerateInput) {
+function buildPrompt(icp: Record<string, any>, brand: Record<string, any> | null, input: GenerateInput) {
   const list = (arr: unknown) =>
     Array.isArray(arr) && arr.length ? arr.join("; ") : "Not provided";
 
@@ -67,16 +71,32 @@ ICP context:
 - Challenges: ${list(icp.challenges)}
 - Opportunities: ${list(icp.opportunities)}
 
+Brand context (if available):
+- Brand name: ${brand?.name || "Not provided"}
+- Brand description: ${brand?.business_description || "Not provided"}
+- Product/service: ${brand?.product_or_service || "Not provided"}
+- Business type: ${brand?.business_type || "Not provided"}
+- Assumed audience: ${list(brand?.assumed_audience)}
+- Existing channels: ${list(brand?.marketing_channels)}
+- Country: ${brand?.country || "Not provided"}
+- Region/city: ${brand?.region_or_city || "Not provided"}
+- Currency: ${brand?.currency || "Not provided"}
+
 Strategy inputs:
 - Goal (required): ${input.goal}
 - Preferred channel: ${input.channel || "No preference"}
 - Offer type: ${input.offerType || "No preference"}
 - Tone: ${input.tone || "No preference"}
+- Business stage / size: ${input.businessStage || "Not specified"}
+- Monthly marketing budget band: ${input.monthlyBudgetBand || "Not specified"}
+- Objective horizon: ${input.objectiveHorizon || "Not specified"}
+- Weekly marketing capacity: ${input.marketingCapacity || "Not specified"}
 
 Rules:
 - Keep outputs short and actionable.
 - Avoid jargon and hype.
 - Provide 3–5 items per list where possible.
+- Prioritise recommendations that can realistically be executed within the stated budget and capacity.
 `;
 }
 
@@ -229,7 +249,18 @@ Deno.serve(async (req) => {
       return json({ error: "ICP not found" }, 404);
     }
 
-    const prompt = buildPrompt(icp, body as GenerateInput);
+    let brand: Record<string, any> | null = null;
+    if (icp?.brand_id) {
+      const { data: brandData } = await supabase
+        .from("brands")
+        .select("*")
+        .eq("id", icp.brand_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      brand = brandData || null;
+    }
+
+    const prompt = buildPrompt(icp, brand, body as GenerateInput);
 
     const resp = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",

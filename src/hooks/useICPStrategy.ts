@@ -60,6 +60,10 @@ type GenerateStrategyInput = {
   channel?: string | null;
   offerType?: string | null;
   tone?: string | null;
+  businessStage?: string | null;
+  monthlyBudgetBand?: string | null;
+  objectiveHorizon?: string | null;
+  marketingCapacity?: string | null;
 };
 
 export function useICPStrategy(icpId?: string | null) {
@@ -117,6 +121,10 @@ export function useICPStrategy(icpId?: string | null) {
               channel: input.channel ?? null,
               offerType: input.offerType ?? null,
               tone: input.tone ?? null,
+              businessStage: input.businessStage ?? null,
+              monthlyBudgetBand: input.monthlyBudgetBand ?? null,
+              objectiveHorizon: input.objectiveHorizon ?? null,
+              marketingCapacity: input.marketingCapacity ?? null,
             },
           }
         );

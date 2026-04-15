@@ -102,6 +102,10 @@ export default function ICPEditor() {
   const [strategyChannel, setStrategyChannel] = useState("");
   const [strategyOfferType, setStrategyOfferType] = useState("");
   const [strategyTone, setStrategyTone] = useState("");
+  const [strategyBusinessStage, setStrategyBusinessStage] = useState("");
+  const [strategyMonthlyBudgetBand, setStrategyMonthlyBudgetBand] = useState("");
+  const [strategyObjectiveHorizon, setStrategyObjectiveHorizon] = useState("next_30_days");
+  const [strategyMarketingCapacity, setStrategyMarketingCapacity] = useState("");
 
   useEffect(() => {
     const loadICP = async () => {
@@ -1253,6 +1257,61 @@ export default function ICPEditor() {
                           <option value="Educational">Educational</option>
                         </select>
                       </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Business stage / size</p>
+                        <select
+                          value={strategyBusinessStage}
+                          onChange={(e) => setStrategyBusinessStage(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">Not specified</option>
+                          <option value="Solo founder">Solo founder</option>
+                          <option value="Small team (2-10)">Small team (2-10)</option>
+                          <option value="Growing business (11-50)">Growing business (11-50)</option>
+                          <option value="Established business (50+)">Established business (50+)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Monthly marketing budget</p>
+                        <select
+                          value={strategyMonthlyBudgetBand}
+                          onChange={(e) => setStrategyMonthlyBudgetBand(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">Not specified</option>
+                          <option value="£0-500">£0-500</option>
+                          <option value="£500-2,000">£500-2,000</option>
+                          <option value="£2,000-10,000">£2,000-10,000</option>
+                          <option value="£10,000+">£10,000+</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Primary objective horizon</p>
+                        <select
+                          value={strategyObjectiveHorizon}
+                          onChange={(e) => setStrategyObjectiveHorizon(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="next_30_days">Next 30 days</option>
+                          <option value="next_quarter">Next quarter</option>
+                          <option value="next_6_months">Next 6 months</option>
+                          <option value="next_12_months">Next 12 months</option>
+                        </select>
+                      </div>
+                      <div>
+                        <p className="text-xs font-['Inter'] text-foreground/60 mb-1">Weekly marketing capacity</p>
+                        <select
+                          value={strategyMarketingCapacity}
+                          onChange={(e) => setStrategyMarketingCapacity(e.target.value)}
+                          className="w-full border border-black rounded-design px-4 py-3 bg-white font-['Inter'] text-foreground"
+                        >
+                          <option value="">Not specified</option>
+                          <option value="1-3 hours/week">1-3 hours/week</option>
+                          <option value="4-7 hours/week">4-7 hours/week</option>
+                          <option value="8-15 hours/week">8-15 hours/week</option>
+                          <option value="16+ hours/week">16+ hours/week</option>
+                        </select>
+                      </div>
                     </div>
                     {strategyError && (
                       <p className="text-xs font-['Inter'] text-red-600 mt-3">
@@ -1267,6 +1326,10 @@ export default function ICPEditor() {
                             channel: strategyChannel || null,
                             offerType: strategyOfferType || null,
                             tone: strategyTone || null,
+                            businessStage: strategyBusinessStage || null,
+                            monthlyBudgetBand: strategyMonthlyBudgetBand || null,
+                            objectiveHorizon: strategyObjectiveHorizon || null,
+                            marketingCapacity: strategyMarketingCapacity || null,
                           })
                         }
                         disabled={strategyGenerating || !strategyGoal}
