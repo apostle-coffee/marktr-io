@@ -875,7 +875,14 @@ export default function ICPEditor() {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="border border-black rounded-design p-6 md:p-8 bg-[#F8F5EE]/60 shadow-md space-y-6">
+              <div>
+                <h3 className="font-['Fraunces'] text-xl mb-1">ICP Details</h3>
+                <p className="font-['Inter'] text-sm text-foreground/70">
+                  Core customer profile details and signals.
+                </p>
+              </div>
+
               {/* Basic Information */}
               <div className="space-y-4">
                 <div className="border border-black rounded-design p-4 bg-white">
@@ -956,8 +963,8 @@ export default function ICPEditor() {
               </div>
             </div>
 
-            {/* Sections */}
-            <div className="space-y-4">
+              {/* Sections */}
+              <div className="space-y-4">
               {/* Goals */}
               <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-100">
                 <EditableListSection
@@ -1018,8 +1025,10 @@ export default function ICPEditor() {
                 />
               </div>
 
-              {/* Marketing Strategy */}
-              <div className="bg-background border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-[400ms]">
+            </div>
+
+            {/* Marketing Strategy */}
+            <div className="bg-[#F1F7FF]/60 border border-black rounded-design p-6 shadow-md animate-fade-in-up delay-[400ms]">
                 <h3 className="font-['Fraunces'] text-xl mb-2">Marketing Strategy</h3>
                 {isFreeTier ? (
                   <div className="relative">
@@ -1342,7 +1351,6 @@ export default function ICPEditor() {
                 )}
               </div>
             </div>
-          </div>
         }
         footerCta={
           effectiveTier === "free" ? (
