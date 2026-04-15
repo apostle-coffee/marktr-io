@@ -380,28 +380,32 @@ export default function OnboardingBuild() {
               _index,
               brandName,
               brands,
-              avatar_key,
-              avatar_gender,
-              avatar_age_range,
-              gender,
-              age_range,
               ...rest
             } = icp || {};
             return {
               ...rest,
+              // Persist avatar metadata when schema supports it.
+              // If production is on an older schema, we fall back below.
+              avatar_key: (icp as any)?.avatar_key ?? null,
+              avatar_gender: (icp as any)?.avatar_gender ?? null,
+              avatar_age_range: (icp as any)?.avatar_age_range ?? null,
               user_id: user.id,
               brand_id: (rest as any)?.brand_id ?? resolvedBrandId ?? null,
               name: (rest as any)?.name || "",
               description: (rest as any)?.description || "",
-              // Keep inserts compatible with older/prod schemas that may not include avatar columns.
-              // Avatar rendering falls back gracefully when these fields are absent in DB rows.
               created_at: now,
               updated_at: now,
             };
           });
 
+        const stripAvatarColumns = (row: any) => {
+          const { avatar_key, avatar_gender, avatar_age_range, ...base } = row || {};
+          return base;
+        };
+
         let batchError: any = null;
         let batchData: Array<{ id: string; created_at: string; user_id: string; name: string }> = [];
+        let usedAvatarFallback = false;
         try {
           const { data, error } = await supabase
             .from("icps")
@@ -411,6 +415,31 @@ export default function OnboardingBuild() {
           batchData = (data as any) || [];
         } catch (err) {
           batchError = err;
+        }
+
+        const avatarSchemaMismatch =
+          !!batchError &&
+          (String((batchError as any)?.code || "").toUpperCase() === "PGRST204" ||
+            /avatar_(key|gender|age_range)|column/i.test(
+              String((batchError as any)?.message || "") +
+                " " +
+                String((batchError as any)?.details || "")
+            ));
+
+        if (avatarSchemaMismatch) {
+          usedAvatarFallback = true;
+          batchError = null;
+          batchData = [];
+          try {
+            const { data, error } = await supabase
+              .from("icps")
+              .insert(rowsToInsert.map(stripAvatarColumns))
+              .select("id, created_at, user_id, name");
+            if (error) batchError = error;
+            batchData = (data as any) || [];
+          } catch (err) {
+            batchError = err;
+          }
         }
 
         if (batchError) {
@@ -428,7 +457,10 @@ export default function OnboardingBuild() {
           const insertedNames = new Set(
             insertedRows.map((row) => row?.name).filter((name) => typeof name === "string")
           );
-          const rowsToRetry = rowsToInsert.filter((row) => !insertedNames.has(row.name));
+          const rowsToRetryRaw = rowsToInsert.filter((row) => !insertedNames.has(row.name));
+          const rowsToRetry = usedAvatarFallback
+            ? rowsToRetryRaw.map(stripAvatarColumns)
+            : rowsToRetryRaw;
           const retryResults = await Promise.allSettled(
             rowsToRetry.map((row) =>
               supabase
