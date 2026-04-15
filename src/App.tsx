@@ -24,6 +24,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Logout from "./pages/Logout";
 import AuthCallback from "./pages/AuthCallback";
 import CheckEmail from "./pages/CheckEmail";
+import BetaSignup from "./pages/BetaSignup";
 import MyBrands from "./pages/MyBrands";
 import BrandEditor from "./pages/BrandEditor";
 import GuestIcpPreview from "./pages/GuestIcpPreview";
@@ -126,6 +127,7 @@ export default function App() {
             {/* Auth Routes */}
             <Route path="/login" element={<AuthRedirect />} />
             <Route path="/signup" element={<AuthRedirect />} />
+            <Route path="/beta-signup" element={<BetaSignup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
