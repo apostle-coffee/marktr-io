@@ -116,6 +116,15 @@ export default function ICPEditor() {
   const [showNewStrategyForm, setShowNewStrategyForm] = useState(false);
   const [isRenamingStrategy, setIsRenamingStrategy] = useState(false);
   const [renameStrategyValue, setRenameStrategyValue] = useState("");
+  const activeStrategyIndex = strategyRecord
+    ? strategyRecords.findIndex((r) => r.id === strategyRecord.id)
+    : -1;
+  const activeStrategyFallbackName =
+    activeStrategyIndex >= 0 ? `Strategy ${strategyRecords.length - activeStrategyIndex}` : "Strategy";
+  const activeStrategySavedName = strategyRecord?.strategy_name || activeStrategyFallbackName;
+  const hasUnsavedStrategyRename =
+    isRenamingStrategy && renameStrategyValue.trim() !== activeStrategySavedName.trim();
+  const hasUnsavedChanges = isDirty || hasUnsavedStrategyRename;
 
   const handleGenerateNewStrategy = useCallback(async () => {
     const res = await generateStrategy({
@@ -186,13 +195,13 @@ export default function ICPEditor() {
   // Warn on browser/tab close if there are unsaved changes
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
-      if (!isDirty) return;
+      if (!hasUnsavedChanges) return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
+  }, [hasUnsavedChanges]);
 
   // Track dirty state whenever icpData changes
   useEffect(() => {
@@ -218,10 +227,10 @@ export default function ICPEditor() {
 
   // Intercept in-app navigation clicks and prompt to save/discard
   useEffect(() => {
-    if (!isDirty) return;
+    if (!hasUnsavedChanges) return;
 
     const onClickCapture = (e: MouseEvent) => {
-      if (!isDirty) return;
+      if (!hasUnsavedChanges) return;
       if (e.defaultPrevented) return;
       if (e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -253,7 +262,7 @@ export default function ICPEditor() {
 
     document.addEventListener("click", onClickCapture, true);
     return () => document.removeEventListener("click", onClickCapture, true);
-  }, [isDirty]);
+  }, [hasUnsavedChanges]);
 
   const handleSave = useCallback(async (): Promise<boolean> => {
     if (!id) return false;
@@ -312,8 +321,15 @@ export default function ICPEditor() {
   };
 
   const handleSaveAndLeave = async () => {
-    const ok = await handleSave();
-    if (!ok) return;
+    if (isDirty) {
+      const ok = await handleSave();
+      if (!ok) return;
+    }
+    if (hasUnsavedStrategyRename && strategyRecord) {
+      const renamed = await renameStrategy(strategyRecord.id, renameStrategyValue);
+      if (!renamed) return;
+      setIsRenamingStrategy(false);
+    }
     setLeaveDialogOpen(false);
     performPendingNavigation(pendingNavRef.current);
   };
@@ -739,7 +755,7 @@ export default function ICPEditor() {
                 <ArrowLeft className="w-5 h-5" />
                 <span className="font-['Inter']">Back to Dashboard</span>
               </Link>
-              {isDirty && saveStatus !== "saving" && (
+              {hasUnsavedChanges && saveStatus !== "saving" && (
                 <span className="text-sm text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-3 py-1 font-['Inter']">
                   Unsaved changes
                 </span>
@@ -1201,9 +1217,7 @@ export default function ICPEditor() {
                                 className="border-black rounded-design"
                                 onClick={() => {
                                   setIsRenamingStrategy(false);
-                                  const idx = strategyRecords.findIndex((r) => r.id === strategyRecord?.id);
-                                  const fallback = idx >= 0 ? `Strategy ${strategyRecords.length - idx}` : "Strategy";
-                                  setRenameStrategyValue(strategyRecord?.strategy_name || fallback);
+                                  setRenameStrategyValue(activeStrategySavedName);
                                 }}
                               >
                                 Cancel
