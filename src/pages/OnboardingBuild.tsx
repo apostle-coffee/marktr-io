@@ -375,13 +375,26 @@ export default function OnboardingBuild() {
 
           const now = new Date().toISOString();
           const rowsToInsert = result.icps.map((icp: any) => {
-            const { id, _index, brandName, brands, ...rest } = icp || {};
+            const {
+              id,
+              _index,
+              brandName,
+              brands,
+              avatar_key,
+              avatar_gender,
+              avatar_age_range,
+              gender,
+              age_range,
+              ...rest
+            } = icp || {};
             return {
               ...rest,
               user_id: user.id,
               brand_id: (rest as any)?.brand_id ?? resolvedBrandId ?? null,
               name: (rest as any)?.name || "",
               description: (rest as any)?.description || "",
+              // Keep inserts compatible with older/prod schemas that may not include avatar columns.
+              // Avatar rendering falls back gracefully when these fields are absent in DB rows.
               created_at: now,
               updated_at: now,
             };
