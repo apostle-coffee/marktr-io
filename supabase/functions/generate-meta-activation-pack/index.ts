@@ -5,6 +5,50 @@ const PROMPT_VERSION = "meta_activation_pack_v1";
 const MODEL = "gpt-5.2";
 const MAX_PACKS_PER_ICP = 10;
 
+function extractUsage(data: any) {
+  return {
+    responseId: data?.id ?? null,
+    inputTokens: data?.usage?.input_tokens ?? null,
+    outputTokens: data?.usage?.output_tokens ?? null,
+    totalTokens: data?.usage?.total_tokens ?? null,
+    reasoningTokens: data?.usage?.output_tokens_details?.reasoning_tokens ?? null,
+  };
+}
+
+async function logOpenAiUsage(
+  supabase: ReturnType<typeof createClient>,
+  payload: {
+    userId: string;
+    icpId: string;
+    relatedId?: string | null;
+    status: "success" | "error";
+    responseId?: string | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    errorMessage?: string | null;
+  }
+) {
+  const { error } = await supabase.from("openai_usage_events").insert({
+    user_id: payload.userId,
+    feature: "generate_meta_activation_pack",
+    model: MODEL,
+    status: payload.status,
+    icp_id: payload.icpId,
+    related_id: payload.relatedId ?? null,
+    response_id: payload.responseId ?? null,
+    input_tokens: payload.inputTokens ?? null,
+    output_tokens: payload.outputTokens ?? null,
+    total_tokens: payload.totalTokens ?? null,
+    reasoning_tokens: payload.reasoningTokens ?? null,
+    error_message: payload.errorMessage ?? null,
+  });
+  if (error) {
+    console.warn("logOpenAiUsage failed", error.message);
+  }
+}
+
 type GenerateInput = {
   icpId: string;
   strategyId?: string | null;
@@ -340,10 +384,17 @@ Deno.serve(async (req) => {
 
     if (!resp.ok) {
       const errText = await resp.text();
+      await logOpenAiUsage(supabase, {
+        userId: user.id,
+        icpId: body.icpId,
+        status: "error",
+        errorMessage: `OpenAI ${resp.status}: ${errText.slice(0, 1000)}`,
+      });
       return json({ error: "OpenAI call failed", status: resp.status, details: errText }, 500);
     }
 
     const aiData = await resp.json();
+    const usage = extractUsage(aiData);
     const outputText =
       aiData?.output_text ??
       aiData?.output?.[0]?.content?.[0]?.text ??
@@ -381,8 +432,31 @@ Deno.serve(async (req) => {
       .select("*")
       .single();
     if (saveError) {
+      await logOpenAiUsage(supabase, {
+        userId: user.id,
+        icpId: body.icpId,
+        status: "error",
+        responseId: usage.responseId,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+        reasoningTokens: usage.reasoningTokens,
+        errorMessage: `Failed to save Meta activation pack: ${saveError.message}`,
+      });
       return json({ error: "Failed to save Meta activation pack", details: saveError.message }, 500);
     }
+
+    await logOpenAiUsage(supabase, {
+      userId: user.id,
+      icpId: body.icpId,
+      relatedId: saved?.id ?? null,
+      status: "success",
+      responseId: usage.responseId,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      reasoningTokens: usage.reasoningTokens,
+    });
 
     return json({ record: saved, pack: parsed, prompt_version: PROMPT_VERSION, model: MODEL });
   } catch (err) {

@@ -11,6 +11,50 @@ const PROMPT_VERSION = "icp_strategy_v2_brand_context";
 const MODEL = "gpt-5.2";
 const MAX_ICP_STRATEGIES = 10;
 
+function extractUsage(data: any) {
+  return {
+    responseId: data?.id ?? null,
+    inputTokens: data?.usage?.input_tokens ?? null,
+    outputTokens: data?.usage?.output_tokens ?? null,
+    totalTokens: data?.usage?.total_tokens ?? null,
+    reasoningTokens: data?.usage?.output_tokens_details?.reasoning_tokens ?? null,
+  };
+}
+
+async function logOpenAiUsage(
+  supabase: ReturnType<typeof createClient>,
+  payload: {
+    userId: string;
+    icpId: string;
+    relatedId?: string | null;
+    status: "success" | "error";
+    responseId?: string | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    totalTokens?: number | null;
+    reasoningTokens?: number | null;
+    errorMessage?: string | null;
+  }
+) {
+  const { error } = await supabase.from("openai_usage_events").insert({
+    user_id: payload.userId,
+    feature: "generate_icp_strategy",
+    model: MODEL,
+    status: payload.status,
+    icp_id: payload.icpId,
+    related_id: payload.relatedId ?? null,
+    response_id: payload.responseId ?? null,
+    input_tokens: payload.inputTokens ?? null,
+    output_tokens: payload.outputTokens ?? null,
+    total_tokens: payload.totalTokens ?? null,
+    reasoning_tokens: payload.reasoningTokens ?? null,
+    error_message: payload.errorMessage ?? null,
+  });
+  if (error) {
+    console.warn("logOpenAiUsage failed", error.message);
+  }
+}
+
 type GenerateInput = {
   icpId: string;
   goal: string;
@@ -303,10 +347,17 @@ Deno.serve(async (req) => {
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("OpenAI error", resp.status, errText);
+      await logOpenAiUsage(supabase, {
+        userId: user.id,
+        icpId: body.icpId,
+        status: "error",
+        errorMessage: `OpenAI ${resp.status}: ${errText.slice(0, 1000)}`,
+      });
       return json({ error: "OpenAI call failed", status: resp.status, details: errText }, 500);
     }
 
     const data = await resp.json();
+    const usage = extractUsage(data);
     const outputText =
       data?.output_text ??
       data?.output?.[0]?.content?.[0]?.text ??
@@ -348,8 +399,31 @@ Deno.serve(async (req) => {
       .single();
 
     if (saveError) {
+      await logOpenAiUsage(supabase, {
+        userId: user.id,
+        icpId: body.icpId,
+        status: "error",
+        responseId: usage.responseId,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+        reasoningTokens: usage.reasoningTokens,
+        errorMessage: `Failed to save strategy: ${saveError.message}`,
+      });
       return json({ error: "Failed to save strategy", details: saveError.message }, 500);
     }
+
+    await logOpenAiUsage(supabase, {
+      userId: user.id,
+      icpId: body.icpId,
+      relatedId: saved?.id ?? null,
+      status: "success",
+      responseId: usage.responseId,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      totalTokens: usage.totalTokens,
+      reasoningTokens: usage.reasoningTokens,
+    });
 
     return json({
       strategy: parsed,
