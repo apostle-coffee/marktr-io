@@ -31,6 +31,7 @@ type AdminSubscription = {
 
 type UsageSummary = {
   days: number;
+  filter_user_id?: string | null;
   event_count: number;
   error_count: number;
   input_tokens: number;
@@ -59,6 +60,7 @@ type UsageEvent = {
 
 export default function Admin() {
   const [email, setEmail] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultUser, setResultUser] = useState<AdminUser | null>(null);
@@ -67,6 +69,7 @@ export default function Admin() {
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
   const [usageDays, setUsageDays] = useState(30);
+  const [usageUserIdFilter, setUsageUserIdFilter] = useState("");
   const [usageSummary, setUsageSummary] = useState<UsageSummary | null>(null);
   const [usageByFeature, setUsageByFeature] = useState<UsageByFeature[]>([]);
   const [recentUsageEvents, setRecentUsageEvents] = useState<UsageEvent[]>([]);
@@ -75,9 +78,10 @@ export default function Admin() {
     setUsageLoading(true);
     setUsageError(null);
     try {
+      const uid = usageUserIdFilter.trim() || null;
       const { data, error: invokeError } = await supabase.functions.invoke(
         "admin-openai-usage",
-        { body: { days, limit: 50 } }
+        { body: { days, limit: 50, userId: uid } }
       );
       if (invokeError) throw invokeError;
       setUsageSummary((data as any)?.summary ?? null);
@@ -121,6 +125,7 @@ export default function Admin() {
     } catch (err: any) {
       setError(err?.message ?? "Search failed. Please try again.");
     } finally {
+      setHasSearched(true);
       setLoading(false);
     }
   };
@@ -131,7 +136,7 @@ export default function Admin() {
         <div>
           <h1 className="font-['Fraunces'] text-4xl mb-2">Admin</h1>
           <p className="font-['Inter'] text-foreground/70">
-            Lookup a user by email.
+            Lookup a user by the email they use to sign in (checks profiles first, then Supabase Auth).
           </p>
         </div>
 
@@ -162,9 +167,15 @@ export default function Admin() {
         <div className="bg-[#E5E5E5]/30 border border-black rounded-design p-6 space-y-6">
           <h2 className="font-['Fraunces'] text-2xl">Result</h2>
 
-          {!loading && !resultUser && (
+          {!hasSearched && !loading && (
             <p className="font-['Inter'] text-sm text-foreground/70">
-              No user found.
+              Enter an email above and click Search.
+            </p>
+          )}
+
+          {hasSearched && !loading && !resultUser && (
+            <p className="font-['Inter'] text-sm text-foreground/70">
+              No user found for that email. Check spelling, or confirm the account exists in Supabase Auth.
             </p>
           )}
 
@@ -231,6 +242,13 @@ export default function Admin() {
         </div>
 
         <div className="bg-[#E5E5E5]/30 border border-black rounded-design p-6 space-y-6">
+          <div>
+            <h2 className="font-['Fraunces'] text-2xl mb-1">OpenAI usage</h2>
+            <p className="font-['Inter'] text-sm text-foreground/70">
+              Totals are <span className="font-medium">system-wide</span> across all accounts in the window.
+              Optionally filter by user UUID to inspect one account; recent events below follow the same filter.
+            </p>
+          </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
               <Label htmlFor="usage-days" className="font-['Inter'] text-sm">
@@ -246,6 +264,19 @@ export default function Admin() {
                 className="w-32 border-black rounded-design font-['Inter']"
               />
             </div>
+            <div className="space-y-1 flex-1 min-w-[200px] max-w-md">
+              <Label htmlFor="usage-user-id" className="font-['Inter'] text-sm">
+                Filter by user id (optional)
+              </Label>
+              <Input
+                id="usage-user-id"
+                type="text"
+                value={usageUserIdFilter}
+                onChange={(e) => setUsageUserIdFilter(e.target.value)}
+                className="border-black rounded-design font-['Inter'] font-mono text-sm"
+                placeholder="uuid — leave empty for all users"
+              />
+            </div>
             <Button
               type="button"
               onClick={() => void loadUsage(usageDays)}
@@ -255,16 +286,45 @@ export default function Admin() {
               {usageLoading ? "Loading usage..." : "Load usage"}
             </Button>
           </div>
+          {resultUser?.id && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="border-black rounded-design font-['Inter']"
+              onClick={() => setUsageUserIdFilter(resultUser.id)}
+            >
+              Use searched user ID ({resultUser.id.slice(0, 8)}…)
+            </Button>
+          )}
 
           {usageError && <p className="text-sm text-red-600">{usageError}</p>}
 
           {usageSummary && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <UsageStat label="Events" value={String(usageSummary.event_count)} />
-              <UsageStat label="Total tokens" value={String(usageSummary.total_tokens)} />
-              <UsageStat label="Input tokens" value={String(usageSummary.input_tokens)} />
-              <UsageStat label="Output tokens" value={String(usageSummary.output_tokens)} />
-            </div>
+            <>
+              <p className="font-['Inter'] text-xs text-foreground/60">
+                {usageSummary.filter_user_id
+                  ? `Filtered totals for user ${usageSummary.filter_user_id} · last ${usageSummary.days} days`
+                  : `System-wide totals · last ${usageSummary.days} days`}
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <UsageStat label="Events" value={String(usageSummary.event_count)} />
+                <UsageStat label="Total tokens" value={String(usageSummary.total_tokens)} />
+                <UsageStat label="Input tokens" value={String(usageSummary.input_tokens)} />
+                <UsageStat label="Output tokens" value={String(usageSummary.output_tokens)} />
+              </div>
+              {usageSummary.event_count === 0 && (
+                <p className="font-['Inter'] text-xs text-foreground/60 border border-black/20 rounded-design p-3 bg-white">
+                  No rows in <span className="font-medium">openai_usage_events</span> yet for this window
+                  {usageSummary.filter_user_id ? " for this user" : ""}. Events are written when deployed Edge Functions
+                  run strategy or Meta pack generation. Apply migrations (including{" "}
+                  <code className="text-[11px]">admin_openai_usage_aggregate</code>), deploy{" "}
+                  <code className="text-[11px]">generate-icp-strategy</code> and{" "}
+                  <code className="text-[11px]">generate-meta-activation-pack</code>, then trigger one generation and load
+                  usage again.
+                </p>
+              )}
+            </>
           )}
 
           {usageByFeature.length > 0 && (
@@ -288,7 +348,11 @@ export default function Admin() {
 
           {recentUsageEvents.length > 0 && (
             <div className="space-y-2">
-              <h3 className="font-['Fraunces'] text-xl">Recent events</h3>
+              <h3 className="font-['Fraunces'] text-xl">Recent events (sample)</h3>
+              <p className="font-['Inter'] text-xs text-foreground/60">
+                Latest {recentUsageEvents.length} rows in the window
+                {usageSummary?.filter_user_id ? " for this user" : " across all users"}.
+              </p>
               <div className="space-y-2 max-h-72 overflow-auto pr-1">
                 {recentUsageEvents.map((ev) => (
                   <div

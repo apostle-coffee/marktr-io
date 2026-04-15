@@ -58,12 +58,57 @@ Deno.serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as {
       days?: number;
       limit?: number;
+      userId?: string | null;
     };
     const days = Math.min(90, Math.max(1, Number(body?.days ?? 30)));
     const limit = Math.min(200, Math.max(10, Number(body?.limit ?? 50)));
+    const filterUserId =
+      typeof body?.userId === "string" && body.userId.trim().length ? body.userId.trim() : null;
     const sinceIso = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: events, error: eventsError } = await supabaseAdmin
+    const { data: aggRaw, error: aggError } = await supabaseAdmin.rpc(
+      "admin_openai_usage_aggregate",
+      { since_ts: sinceIso, filter_user_id: filterUserId }
+    );
+
+    if (aggError) {
+      return json(
+        {
+          error: "Failed to aggregate usage",
+          details: aggError.message,
+          hint: "Apply migration 20260415220000_admin_openai_usage_aggregate.sql and grant execute to service_role.",
+        },
+        500
+      );
+    }
+
+    const agg = (aggRaw ?? {}) as {
+      totals?: Record<string, unknown>;
+      by_feature?: unknown[];
+    };
+
+    const totals = agg.totals ?? {};
+    const systemSummary = {
+      days,
+      filter_user_id: filterUserId,
+      event_count: Number(totals.event_count ?? 0),
+      error_count: Number(totals.error_count ?? 0),
+      input_tokens: Number(totals.input_tokens ?? 0),
+      output_tokens: Number(totals.output_tokens ?? 0),
+      total_tokens: Number(totals.total_tokens ?? 0),
+    };
+
+    const systemByFeature = Array.isArray(agg.by_feature)
+      ? (agg.by_feature as Record<string, unknown>[]).map((row) => ({
+          feature: String(row.feature ?? "unknown"),
+          events: Number(row.events ?? 0),
+          input: Number(row.input ?? 0),
+          output: Number(row.output ?? 0),
+          total: Number(row.total ?? 0),
+        }))
+      : [];
+
+    let eventsQuery = supabaseAdmin
       .from("openai_usage_events")
       .select(
         "id,feature,model,status,icp_id,related_id,input_tokens,output_tokens,total_tokens,reasoning_tokens,error_message,created_at,user_id"
@@ -72,48 +117,20 @@ Deno.serve(async (req) => {
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (eventsError) {
-      return json({ error: "Failed to load usage events", details: eventsError.message }, 500);
+    if (filterUserId) {
+      eventsQuery = eventsQuery.eq("user_id", filterUserId);
     }
 
-    const byFeature = new Map<string, { events: number; input: number; output: number; total: number }>();
-    let totalInput = 0;
-    let totalOutput = 0;
-    let totalTokens = 0;
-    let errorCount = 0;
+    const { data: events, error: eventsError } = await eventsQuery;
 
-    (events || []).forEach((ev: any) => {
-      const feature = ev.feature || "unknown";
-      const input = Number(ev.input_tokens || 0);
-      const output = Number(ev.output_tokens || 0);
-      const total = Number(ev.total_tokens || 0);
-      totalInput += input;
-      totalOutput += output;
-      totalTokens += total;
-      if (ev.status === "error") errorCount += 1;
-
-      const bucket = byFeature.get(feature) || { events: 0, input: 0, output: 0, total: 0 };
-      bucket.events += 1;
-      bucket.input += input;
-      bucket.output += output;
-      bucket.total += total;
-      byFeature.set(feature, bucket);
-    });
+    if (eventsError) {
+      return json({ error: "Failed to load recent usage events", details: eventsError.message }, 500);
+    }
 
     return json({
       ok: true,
-      summary: {
-        days,
-        event_count: (events || []).length,
-        error_count: errorCount,
-        input_tokens: totalInput,
-        output_tokens: totalOutput,
-        total_tokens: totalTokens,
-      },
-      by_feature: Array.from(byFeature.entries()).map(([feature, stats]) => ({
-        feature,
-        ...stats,
-      })),
+      summary: systemSummary,
+      by_feature: systemByFeature,
       events: events || [],
     });
   } catch (err: any) {
