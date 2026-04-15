@@ -2,13 +2,14 @@
 // Deploy with: supabase functions deploy generate-icp-strategy
 // Set secret with: supabase secrets set OPENAI_API_KEY=sk-...
 //
-// Generates a marketing strategy for a specific ICP and upserts into icp_strategies.
+// Generates a marketing strategy for a specific ICP and inserts into icp_strategies.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PROMPT_VERSION = "icp_strategy_v2_brand_context";
 const MODEL = "gpt-5.2";
+const MAX_ICP_STRATEGIES = 10;
 
 type GenerateInput = {
   icpId: string;
@@ -249,6 +250,23 @@ Deno.serve(async (req) => {
       return json({ error: "ICP not found" }, 404);
     }
 
+    const { count: existingCount, error: countError } = await supabase
+      .from("icp_strategies")
+      .select("id", { count: "exact", head: true })
+      .eq("icp_id", body.icpId)
+      .eq("user_id", user.id);
+
+    if (countError) {
+      return json({ error: "Failed to count existing strategies", details: countError.message }, 500);
+    }
+
+    if ((existingCount ?? 0) >= MAX_ICP_STRATEGIES) {
+      return json(
+        { error: `You can save up to ${MAX_ICP_STRATEGIES} strategies per ICP.` },
+        400
+      );
+    }
+
     let brand: Record<string, any> | null = null;
     if (icp?.brand_id) {
       const { data: brandData } = await supabase
@@ -311,6 +329,7 @@ Deno.serve(async (req) => {
     const row = {
       icp_id: body.icpId,
       user_id: user.id,
+      strategy_name: `Strategy ${(existingCount ?? 0) + 1}`,
       goal: body.goal,
       channel: body.channel ?? null,
       offer_type: body.offerType ?? null,
@@ -324,7 +343,7 @@ Deno.serve(async (req) => {
 
     const { data: saved, error: saveError } = await supabase
       .from("icp_strategies")
-      .upsert(row, { onConflict: "icp_id" })
+      .insert(row)
       .select()
       .single();
 
