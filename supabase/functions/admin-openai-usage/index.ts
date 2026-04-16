@@ -18,6 +18,41 @@ function json(resBody: unknown, status = 200) {
   });
 }
 
+const MODEL_PRICING_USD_PER_MILLION: Record<string, { input: number; output: number }> = {
+  "gpt-5.4": { input: 2.5, output: 15 },
+  "gpt-5.4-mini": { input: 0.75, output: 4.5 },
+  "gpt-5.4-nano": { input: 0.2, output: 1.25 },
+  "gpt-5.2": { input: 1.75, output: 14 },
+  "gpt-5.1": { input: 1.25, output: 10 },
+  "gpt-5": { input: 1.25, output: 10 },
+  "gpt-5-mini": { input: 0.25, output: 2 },
+  "gpt-5-nano": { input: 0.05, output: 0.4 },
+  "gpt-4.1": { input: 2, output: 8 },
+  "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+  "gpt-4.1-nano": { input: 0.1, output: 0.4 },
+  "gpt-4o": { input: 2.5, output: 10 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  o3: { input: 2, output: 8 },
+  "o4-mini": { input: 1.1, output: 4.4 },
+};
+const MONTHLY_SPEND_CAP_GBP = Number(Deno.env.get("OPENAI_MONTHLY_SPEND_CAP_GBP") ?? "7.5");
+const GBP_TO_USD_RATE = Number(Deno.env.get("OPENAI_GBP_USD_RATE") ?? "1.28");
+const MONTHLY_SPEND_CAP_USD = MONTHLY_SPEND_CAP_GBP * GBP_TO_USD_RATE;
+const NEAR_CAP_THRESHOLD_PCT = 0.8;
+
+function estimateCostUsd(modelRaw: unknown, inputTokensRaw: unknown, outputTokensRaw: unknown): number | null {
+  const model = String(modelRaw || "").toLowerCase();
+  const pricing = MODEL_PRICING_USD_PER_MILLION[model];
+  if (!pricing) return null;
+
+  const inputTokens = Number(inputTokensRaw || 0);
+  const outputTokens = Number(outputTokensRaw || 0);
+  const cost =
+    (Math.max(0, inputTokens) * pricing.input) / 1_000_000 +
+    (Math.max(0, outputTokens) * pricing.output) / 1_000_000;
+  return Number(cost.toFixed(6));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
@@ -96,6 +131,8 @@ Deno.serve(async (req) => {
       input_tokens: Number(totals.input_tokens ?? 0),
       output_tokens: Number(totals.output_tokens ?? 0),
       total_tokens: Number(totals.total_tokens ?? 0),
+      estimated_cost_usd: Number(totals.estimated_cost_usd ?? 0),
+      unknown_pricing_events: Number(totals.unknown_pricing_events ?? 0),
     };
 
     const systemByFeature = Array.isArray(agg.by_feature)
@@ -105,6 +142,8 @@ Deno.serve(async (req) => {
           input: Number(row.input ?? 0),
           output: Number(row.output ?? 0),
           total: Number(row.total ?? 0),
+          estimated_cost_usd: Number(row.estimated_cost_usd ?? 0),
+          unknown_pricing_events: Number(row.unknown_pricing_events ?? 0),
         }))
       : [];
 
@@ -127,11 +166,57 @@ Deno.serve(async (req) => {
       return json({ error: "Failed to load recent usage events", details: eventsError.message }, 500);
     }
 
+    const eventsWithCost = (events || []).map((event: any) => ({
+      ...event,
+      estimated_cost_usd: estimateCostUsd(event?.model, event?.input_tokens, event?.output_tokens),
+    }));
+
+    let nearCapUsers = {
+      users_with_usage_count: 0,
+      users_near_cap_count: 0,
+      users_near_cap_pct: 0,
+      near_cap_threshold_pct: NEAR_CAP_THRESHOLD_PCT,
+      monthly_cap_gbp: MONTHLY_SPEND_CAP_GBP,
+      monthly_cap_usd: Number(MONTHLY_SPEND_CAP_USD.toFixed(4)),
+    };
+
+    if (!filterUserId) {
+      const { data: allRows, error: allRowsError } = await supabaseAdmin
+        .from("openai_usage_events")
+        .select("user_id,model,input_tokens,output_tokens")
+        .gte("created_at", sinceIso)
+        .limit(50000);
+      if (!allRowsError) {
+        const spendByUser = new Map<string, number>();
+        (allRows || []).forEach((row: any) => {
+          const userId = String(row?.user_id || "");
+          if (!userId) return;
+          const cost = estimateCostUsd(row?.model, row?.input_tokens, row?.output_tokens);
+          spendByUser.set(userId, (spendByUser.get(userId) || 0) + cost);
+        });
+        const usersWithUsage = spendByUser.size;
+        const nearCap = Array.from(spendByUser.values()).filter(
+          (usd) => usd >= MONTHLY_SPEND_CAP_USD * NEAR_CAP_THRESHOLD_PCT
+        ).length;
+        nearCapUsers = {
+          users_with_usage_count: usersWithUsage,
+          users_near_cap_count: nearCap,
+          users_near_cap_pct: usersWithUsage ? Number(((nearCap / usersWithUsage) * 100).toFixed(2)) : 0,
+          near_cap_threshold_pct: NEAR_CAP_THRESHOLD_PCT,
+          monthly_cap_gbp: MONTHLY_SPEND_CAP_GBP,
+          monthly_cap_usd: Number(MONTHLY_SPEND_CAP_USD.toFixed(4)),
+        };
+      }
+    }
+
     return json({
       ok: true,
-      summary: systemSummary,
+      summary: {
+        ...systemSummary,
+        ...nearCapUsers,
+      },
       by_feature: systemByFeature,
-      events: events || [],
+      events: eventsWithCost,
     });
   } catch (err: any) {
     console.error("[admin-openai-usage] unexpected error", err);

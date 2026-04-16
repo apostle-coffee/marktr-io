@@ -1554,7 +1554,8 @@ export default function ICPEditor() {
                     </div>
                     {strategyGenerating && (
                       <p className="text-xs font-['Inter'] text-foreground/70 mt-3 animate-pulse">
-                        Working through your ICP and brand context. This can take up to 30 seconds.
+                        Working through your ICP and brand context. This can take up to 30 seconds. Please do not refresh
+                        or navigate away.
                       </p>
                     )}
                   </div>

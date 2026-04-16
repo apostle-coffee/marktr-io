@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { supabase } from "../config/supabase";
+import DashboardShell from "../layouts/DashboardShell";
+import { ArrowLeft, Settings, LayoutDashboard } from "lucide-react";
 
 type AdminUser = {
   id: string;
@@ -37,6 +40,14 @@ type UsageSummary = {
   input_tokens: number;
   output_tokens: number;
   total_tokens: number;
+  estimated_cost_usd?: number;
+  unknown_pricing_events?: number;
+  users_with_usage_count?: number;
+  users_near_cap_count?: number;
+  users_near_cap_pct?: number;
+  near_cap_threshold_pct?: number;
+  monthly_cap_gbp?: number;
+  monthly_cap_usd?: number;
 };
 
 type UsageByFeature = {
@@ -45,6 +56,8 @@ type UsageByFeature = {
   input: number;
   output: number;
   total: number;
+  estimated_cost_usd?: number;
+  unknown_pricing_events?: number;
 };
 
 type UsageEvent = {
@@ -53,7 +66,10 @@ type UsageEvent = {
   model: string;
   status: string;
   user_id: string;
+  input_tokens: number | null;
+  output_tokens: number | null;
   total_tokens: number | null;
+  estimated_cost_usd?: number | null;
   error_message: string | null;
   created_at: string;
 };
@@ -131,8 +147,32 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-6 py-12 space-y-8">
+    <DashboardShell contentClassName="flex-1 px-6 py-8 lg:px-12">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 border border-black rounded-design px-3 py-2 text-sm font-['Inter'] hover:bg-accent-grey/20"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
+          <Link
+            to="/account"
+            className="inline-flex items-center gap-2 border border-black rounded-design px-3 py-2 text-sm font-['Inter'] hover:bg-accent-grey/20"
+          >
+            <Settings className="w-4 h-4" />
+            Account
+          </Link>
+          <Link
+            to="/my-brands"
+            className="inline-flex items-center gap-2 border border-black rounded-design px-3 py-2 text-sm font-['Inter'] hover:bg-accent-grey/20"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            My Brands
+          </Link>
+        </div>
+
         <div>
           <h1 className="font-['Fraunces'] text-4xl mb-2">Admin</h1>
           <p className="font-['Inter'] text-foreground/70">
@@ -248,6 +288,9 @@ export default function Admin() {
               Totals are <span className="font-medium">system-wide</span> across all accounts in the window.
               Optionally filter by user UUID to inspect one account; recent events below follow the same filter.
             </p>
+            <p className="font-['Inter'] text-xs text-foreground/60 mt-1">
+              Cost is an estimate using current standard per-token pricing for mapped models.
+            </p>
           </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
@@ -313,6 +356,40 @@ export default function Admin() {
                 <UsageStat label="Input tokens" value={String(usageSummary.input_tokens)} />
                 <UsageStat label="Output tokens" value={String(usageSummary.output_tokens)} />
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <UsageStat
+                  label="Estimated cost (USD)"
+                  value={`$${Number(usageSummary.estimated_cost_usd ?? 0).toFixed(4)}`}
+                />
+                <UsageStat
+                  label="Unknown model pricing events"
+                  value={String(usageSummary.unknown_pricing_events ?? 0)}
+                />
+              </div>
+              {!usageSummary.filter_user_id && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <UsageStat
+                    label="Users with usage"
+                    value={String(usageSummary.users_with_usage_count ?? 0)}
+                  />
+                  <UsageStat
+                    label="Users near cap"
+                    value={String(usageSummary.users_near_cap_count ?? 0)}
+                  />
+                  <UsageStat
+                    label="Near-cap rate"
+                    value={`${Number(usageSummary.users_near_cap_pct ?? 0).toFixed(2)}%`}
+                  />
+                </div>
+              )}
+              {!usageSummary.filter_user_id && (
+                <p className="font-['Inter'] text-xs text-foreground/60">
+                  Near-cap = users at or above{" "}
+                  {Math.round(Number(usageSummary.near_cap_threshold_pct ?? 0.8) * 100)}% of monthly cap (about £
+                  {Number(usageSummary.monthly_cap_gbp ?? 7.5).toFixed(2)} / $
+                  {Number(usageSummary.monthly_cap_usd ?? 9.6).toFixed(2)}).
+                </p>
+              )}
               {usageSummary.event_count === 0 && (
                 <p className="font-['Inter'] text-xs text-foreground/60 border border-black/20 rounded-design p-3 bg-white">
                   No rows in <span className="font-medium">openai_usage_events</span> yet for this window
@@ -338,7 +415,11 @@ export default function Admin() {
                   >
                     <p className="font-['Inter'] text-sm">{row.feature}</p>
                     <p className="font-['Inter'] text-xs text-foreground/70">
-                      events: {row.events} | total tokens: {row.total}
+                      events: {row.events} | total tokens: {row.total} | est cost: $
+                      {Number(row.estimated_cost_usd ?? 0).toFixed(4)}
+                      {(row.unknown_pricing_events ?? 0) > 0
+                        ? ` | unknown pricing: ${row.unknown_pricing_events}`
+                        : ""}
                     </p>
                   </div>
                 ))}
@@ -367,6 +448,12 @@ export default function Admin() {
                       tokens: {ev.total_tokens ?? 0} · user: {ev.user_id}
                     </p>
                     <p className="font-['Inter'] text-xs text-foreground/70">
+                      est cost: $
+                      {ev.estimated_cost_usd == null
+                        ? "n/a"
+                        : Number(ev.estimated_cost_usd).toFixed(6)}
+                    </p>
+                    <p className="font-['Inter'] text-xs text-foreground/70">
                       {new Date(ev.created_at).toLocaleString("en-GB")}
                     </p>
                     {ev.error_message && (
@@ -381,7 +468,7 @@ export default function Admin() {
           )}
         </div>
       </div>
-    </div>
+    </DashboardShell>
   );
 }
 

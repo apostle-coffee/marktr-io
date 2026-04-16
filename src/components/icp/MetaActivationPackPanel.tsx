@@ -192,7 +192,7 @@ export function MetaActivationPackPanel({
       {isLoading && <p className="text-xs font-['Inter'] text-foreground/60">Loading packs…</p>}
       {isGenerating && (
         <p className="text-xs font-['Inter'] text-foreground/70 animate-pulse">
-          Building audiences, messaging matrix, and 30-day roadmap...
+          Building audiences, messaging matrix, and 30-day roadmap. Please do not refresh or navigate away.
         </p>
       )}
 

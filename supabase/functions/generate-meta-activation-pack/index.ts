@@ -4,6 +4,66 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const PROMPT_VERSION = "meta_activation_pack_v1";
 const MODEL = "gpt-5.2";
 const MAX_PACKS_PER_ICP = 10;
+const MONTHLY_SPEND_CAP_GBP = Number(Deno.env.get("OPENAI_MONTHLY_SPEND_CAP_GBP") ?? "7.5");
+const GBP_TO_USD_RATE = Number(Deno.env.get("OPENAI_GBP_USD_RATE") ?? "1.28");
+const MONTHLY_SPEND_CAP_USD = MONTHLY_SPEND_CAP_GBP * GBP_TO_USD_RATE;
+
+const MODEL_PRICING_USD_PER_MILLION: Record<string, { input: number; output: number }> = {
+  "gpt-5.4": { input: 2.5, output: 15 },
+  "gpt-5.4-mini": { input: 0.75, output: 4.5 },
+  "gpt-5.4-nano": { input: 0.2, output: 1.25 },
+  "gpt-5.2": { input: 1.75, output: 14 },
+  "gpt-5.1": { input: 1.25, output: 10 },
+  "gpt-5": { input: 1.25, output: 10 },
+  "gpt-5-mini": { input: 0.25, output: 2 },
+  "gpt-5-nano": { input: 0.05, output: 0.4 },
+  "gpt-4.1": { input: 2, output: 8 },
+  "gpt-4.1-mini": { input: 0.4, output: 1.6 },
+  "gpt-4.1-nano": { input: 0.1, output: 0.4 },
+  "gpt-4o": { input: 2.5, output: 10 },
+  "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  o3: { input: 2, output: 8 },
+  "o4-mini": { input: 1.1, output: 4.4 },
+};
+
+function estimateCostUsd(modelRaw: unknown, inputTokensRaw: unknown, outputTokensRaw: unknown): number {
+  const model = String(modelRaw || "").toLowerCase();
+  const pricing = MODEL_PRICING_USD_PER_MILLION[model];
+  if (!pricing) return 0;
+  const inputTokens = Number(inputTokensRaw || 0);
+  const outputTokens = Number(outputTokensRaw || 0);
+  return (
+    (Math.max(0, inputTokens) * pricing.input) / 1_000_000 +
+    (Math.max(0, outputTokens) * pricing.output) / 1_000_000
+  );
+}
+
+async function getMonthlyUsageSpendUsd(
+  supabase: ReturnType<typeof createClient>,
+  userId: string
+): Promise<{ spendUsd: number; error?: string }> {
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from("openai_usage_events")
+    .select("model,input_tokens,output_tokens,created_at")
+    .eq("user_id", userId)
+    .gte("created_at", monthStart.toISOString())
+    .limit(10000);
+
+  if (error) {
+    return { spendUsd: 0, error: error.message };
+  }
+
+  const spendUsd = ((data as any[]) || []).reduce(
+    (sum, row) => sum + estimateCostUsd(row?.model, row?.input_tokens, row?.output_tokens),
+    0
+  );
+
+  return { spendUsd };
+}
 
 function extractUsage(data: any) {
   return {
@@ -359,6 +419,27 @@ Deno.serve(async (req) => {
         .eq("user_id", user.id)
         .maybeSingle();
       strategy = strategyData?.strategy ?? null;
+    }
+
+    const monthlyUsage = await getMonthlyUsageSpendUsd(supabase, user.id);
+    if (monthlyUsage.error) {
+      return json({ error: "Failed to check monthly usage cap", details: monthlyUsage.error }, 500);
+    }
+    if (monthlyUsage.spendUsd >= MONTHLY_SPEND_CAP_USD) {
+      await logOpenAiUsage(supabase, {
+        userId: user.id,
+        icpId: body.icpId,
+        status: "error",
+        errorMessage:
+          `Monthly AI usage cap reached (GBP ${MONTHLY_SPEND_CAP_GBP.toFixed(2)} / USD ${MONTHLY_SPEND_CAP_USD.toFixed(2)}).`,
+      });
+      return json(
+        {
+          error:
+            `Monthly AI usage cap reached for this account (£${MONTHLY_SPEND_CAP_GBP.toFixed(2)}). Please contact support to increase your limit.`,
+        },
+        402
+      );
     }
 
     const prompt = buildPrompt(icp as Record<string, unknown>, brand, strategy, body as GenerateInput);
