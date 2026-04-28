@@ -416,6 +416,25 @@
 </style>
 </head>
 <body>
+<script>
+  (function () {
+    const APP_URL = 'https://app.marktr.io';
+    const UNLOCK_CODE = '010886';
+    const STORAGE_KEY = 'marktr_holding_unlocked';
+    const params = new URLSearchParams(window.location.search);
+    const unlock = (params.get('unlock') || '').trim();
+
+    if (unlock === UNLOCK_CODE) {
+      localStorage.setItem(STORAGE_KEY, '1');
+      window.location.replace(APP_URL);
+      return;
+    }
+
+    if (localStorage.getItem(STORAGE_KEY) === '1') {
+      window.location.replace(APP_URL);
+    }
+  })();
+</script>
 
 <div class="page" style="min-height: calc(100vh - 60px);">
 
