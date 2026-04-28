@@ -492,7 +492,7 @@
 <script>
   /* Project URL (public). No trailing slash. Anon key: Dashboard → Settings → API → anon public */
   const SUPABASE_URL = 'https://txpuoncdlocqwyddvcid.supabase.co'.replace(/\/+$/, '');
-  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHVvbmNkbG9jcXd5ZGR2Y2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMDk1NzMsImV4cCI6MjA5Mjc4NTU3M30.KOSnaQx7l_iCSyvvFkNtrkdRqOoJZcGpwgFy62Po3a8';
 
   const supabaseLib = typeof supabase !== 'undefined' ? supabase : window.supabase;
   if (!supabaseLib || typeof supabaseLib.createClient !== 'function') {
