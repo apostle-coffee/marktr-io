@@ -16,6 +16,7 @@ import Collections from "./pages/Collections";
 import CollectionView from "./pages/CollectionView";
 import PaywallDemo from "./pages/PaywallDemo";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import PlaceholderPage from "./pages/PlaceholderPage";
 import MyAccount from "./pages/MyAccount";
 import Admin from "./pages/Admin";
 import Pricing from "./pages/Pricing";
@@ -191,6 +192,21 @@ export default function App() {
             <Route path="/team" element={
               <ProtectedRoute>
                 <TeamSettings />
+              </ProtectedRoute>
+            } />
+            <Route path="/strategy" element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Content Strategy" />
+              </ProtectedRoute>
+            } />
+            <Route path="/content" element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Content Library" />
+              </ProtectedRoute>
+            } />
+            <Route path="/scheduling" element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Scheduling" />
               </ProtectedRoute>
             } />
             
