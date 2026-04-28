@@ -340,23 +340,6 @@ CREATE TABLE IF NOT EXISTS "public"."icps" (
 ALTER TABLE "public"."icps" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."onboarding_leads" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "email" "text" NOT NULL,
-    "email_normalized" "text" GENERATED ALWAYS AS ("lower"(TRIM(BOTH FROM "email"))) STORED,
-    "source" "text",
-    "has_account" boolean DEFAULT false,
-    "user_id" "uuid",
-    "converted_at" timestamp with time zone,
-    "last_seen_at" timestamp with time zone,
-    "metadata" "jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"(),
-    "name" "text"
-);
-
-
-ALTER TABLE "public"."onboarding_leads" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."openai_usage_events" (
@@ -481,8 +464,6 @@ ALTER TABLE ONLY "public"."icps"
 
 
 
-ALTER TABLE ONLY "public"."onboarding_leads"
-    ADD CONSTRAINT "onboarding_leads_pkey" PRIMARY KEY ("id");
 
 
 
@@ -572,19 +553,15 @@ CREATE INDEX "idx_icp_social_content_packs_user_created" ON "public"."icp_social
 
 
 
-CREATE INDEX "onboarding_leads_created_at_idx" ON "public"."onboarding_leads" USING "btree" ("created_at");
 
 
 
-CREATE UNIQUE INDEX "onboarding_leads_email_normalized_idx" ON "public"."onboarding_leads" USING "btree" ("email_normalized");
 
 
 
-CREATE INDEX "onboarding_leads_has_account_idx" ON "public"."onboarding_leads" USING "btree" ("has_account");
 
 
 
-CREATE INDEX "onboarding_leads_name_idx" ON "public"."onboarding_leads" USING "btree" ("name");
 
 
 
@@ -683,8 +660,6 @@ ALTER TABLE ONLY "public"."icps"
 
 
 
-ALTER TABLE ONLY "public"."onboarding_leads"
-    ADD CONSTRAINT "onboarding_leads_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
 
 
 
@@ -713,7 +688,6 @@ ALTER TABLE ONLY "public"."stripe_subscriptions"
 
 
 
-CREATE POLICY "Allow update when owner" ON "public"."onboarding_leads" FOR UPDATE TO "authenticated" USING (("user_id" = "auth"."uid"())) WITH CHECK (("user_id" = "auth"."uid"()));
 
 
 
@@ -912,7 +886,6 @@ CREATE POLICY "icp_strategies_update_own" ON "public"."icp_strategies" FOR UPDAT
 ALTER TABLE "public"."icps" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."onboarding_leads" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."openai_usage_events" ENABLE ROW LEVEL SECURITY;
@@ -1021,9 +994,6 @@ GRANT ALL ON TABLE "public"."icps" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."onboarding_leads" TO "anon";
-GRANT ALL ON TABLE "public"."onboarding_leads" TO "authenticated";
-GRANT ALL ON TABLE "public"."onboarding_leads" TO "service_role";
 
 
 
