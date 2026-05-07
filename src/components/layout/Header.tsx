@@ -75,7 +75,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <span className="font-['Fraunces'] text-xl font-bold">ICP Generator</span>
+            <span className="font-['Fraunces'] text-xl font-bold">marktr</span>
           </Link>
 
           {/* Desktop Navigation */}

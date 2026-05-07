@@ -11,10 +11,10 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1">
             <h3 className="font-fraunces text-xl font-bold text-text-dark mb-4">
-              ICP Generator
+              marktr
             </h3>
             <p className="text-sm text-text-dark/80">
-              AI-powered Ideal Customer Profile generation for your business.
+              Your marketing team, built in.
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export function Footer() {
 
         <div className="mt-8 pt-8 border-t border-accent-grey text-center text-sm text-text-dark/80">
           <p>
-            &copy; {new Date().getFullYear()} ICP Generator. All rights reserved. Created and managed by{" "}
+            &copy; {new Date().getFullYear()} marktr.io. Created and managed by{" "}
             <a
               href="https://bullfinchdigital.com"
               className="underline hover:text-button-green transition-colors"
